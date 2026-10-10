@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:app": "node --test tests/app/*.test.mjs"
+        "test:app": "node --test tests/app/*.test.mjs",
+        "test:build": "node --test tests/build/*.test.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",

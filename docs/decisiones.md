@@ -103,3 +103,11 @@ opción para eso (quita la subcarpeta a propósito), así que
 dos direcciones en la página que sale, solo cuando el pedido llega por una
 subcarpeta. En la raíz del dominio no hace nada. Si se actualiza Livewire,
 `SubcarpetaTest` avisa si cambió la forma de esas etiquetas.
+Probando en el celular aparecieron dos más (2026-10-10): las pantallas de
+Breeze redirigían con `route(..., absolute: false)`, que Laravel arma **sin**
+la subcarpeta, y Livewire mandaba al ingresar a `/dashboard` de la raíz (en
+XAMPP, su propia página); y el CSS pedía las fuentes de Font Awesome y las
+imágenes de Leaflet en `/build/...` (íconos en blanco: el botón del menú en
+mobile no se veía). Las redirecciones van con dirección absoluta (`route()`,
+`url('/')`) y Vite escribe las del CSS relativas al propio CSS
+(`renderBuiltUrl`). Lo cuidan `SubcarpetaTest` y `npm run test:build`.

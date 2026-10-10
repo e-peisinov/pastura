@@ -114,6 +114,7 @@ npm run dev                # Vite en watch
 npm run build              # build de producción
 php artisan test           # suite completa
 npm run test:app           # lógica de la app de campo (Node)
+npm run test:build         # el CSS compilado anda en una subcarpeta (Node, compila)
 php artisan migrate                # aplicar migraciones nuevas (nunca fresh, regla 12)
 php artisan db:seed --class=UnSeeder   # un seeder de referencia puntual
 php artisan migrate --seed         # SOLO en una instalación nueva, con la base vacía

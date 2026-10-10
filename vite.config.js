@@ -8,4 +8,13 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    experimental: {
+        // Dentro del CSS, las fuentes y las imágenes van relativas al propio
+        // CSS: así cargan también en una subcarpeta (P13), no desde /build/.
+        renderBuiltUrl(archivo, { hostType }) {
+            if (hostType === 'css') {
+                return { relative: true };
+            }
+        },
+    },
 });
