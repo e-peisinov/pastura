@@ -136,6 +136,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Campos | Editar | Ver |
 | Recorridas | Editar | Editar (solo las suyas) |
 | Usuarios | Editar | Sin acceso |
+| Reportes | Editar (con Ver alcanza, también para exportar) | Sin acceso |
 | Configuración | Editar | Sin acceso |
 | Auditoría | Editar (con Ver alcanza: no se edita nada) | Sin acceso |
 
@@ -153,4 +154,4 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Configuración: organización, tipos de pastura, parámetros (P16, P17) | Hecha |
 | kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Hecha |
 | Auditoría de lo sensible (P18, P20) | Hecha |
-| Reportes con CSV y PDF (P18) | Más adelante |
+| Reportes con CSV y PDF (P18, P21) | Hecha |

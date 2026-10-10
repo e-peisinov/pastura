@@ -45,7 +45,7 @@ class PermisosTest extends TestCase
 
         $esperado = [
             'tablero' => Nivel::Ver, 'campos' => Nivel::Ver,
-            'recorridas' => Nivel::Editar, 'usuarios' => Nivel::SinAcceso,
+            'recorridas' => Nivel::Editar, 'reportes' => Nivel::SinAcceso, 'usuarios' => Nivel::SinAcceso,
             'configuracion' => Nivel::SinAcceso, 'auditoria' => Nivel::SinAcceso,
         ];
 

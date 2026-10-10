@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\PaseAlPanelController;
+use App\Http\Controllers\ReportesPdfController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\Auditoria\Auditoria;
 use App\Livewire\Campos\Campos;
 use App\Livewire\Configuracion\Configuracion;
 use App\Livewire\Recorridas\Recorridas;
+use App\Livewire\Reportes\Reportes;
 use App\Livewire\Tablero\Tablero;
 use App\Livewire\Usuarios\Usuarios;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +27,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('campos', Campos::class)->name('campos')->middleware('modulo:campos');
     // Recorridas: el recorredor ve solo las suyas (dominio.md, regla 3); la ficha es un hijo.
     Route::get('recorridas', Recorridas::class)->name('recorridas')->middleware('modulo:recorridas');
+    // Reportes (P18): solo lectura; exportar e imprimir es leer, con Ver alcanza.
+    Route::middleware('modulo:reportes')->group(function () {
+        Route::get('reportes', Reportes::class)->name('reportes');
+        // Los reportes impresos, con el período, el campo y el potrero de la pantalla en la URL.
+        Route::get('reportes/pdf', ReportesPdfController::class)->name('reportes.pdf');
+    });
     // Usuarios (D49): alta, contraseña, baja lógica y la matriz de permisos de cada uno.
     Route::get('admin/usuarios', Usuarios::class)->name('admin.usuarios')->middleware('modulo:usuarios');
     // Configuración (P17): la organización, los tipos de pastura (P16) y los parámetros del seguimiento.

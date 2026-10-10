@@ -49,6 +49,7 @@ están hechas y cuáles faltan está en la tabla de alcance de
 | Tests | PHPUnit | ^11.5 |
 | API de la app | Laravel Sanctum (tokens Bearer) | ^4 |
 | App de campo | JS sin build + js-aruco2 | `public/app/` |
+| PDF | barryvdh/laravel-dompdf | ^3.1 |
 
 La UI se arma con los componentes propios `<x-ui.*>`. No se instala Flux.
 

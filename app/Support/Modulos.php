@@ -28,6 +28,7 @@ final class Modulos
             new Modulo('tablero', 'dashboard', 'fa-gauge-high', tecla: 't'),
             new Modulo('campos', 'campos', 'fa-map-location-dot', tecla: 'c'),
             new Modulo('recorridas', 'recorridas', 'fa-route', Nivel::Editar, tecla: 'r'),
+            new Modulo('reportes', 'reportes', 'fa-chart-column', Nivel::SinAcceso, tecla: 'p'),
             new Modulo('usuarios', 'admin.usuarios', 'fa-user-gear', Nivel::SinAcceso, tecla: 'u'),
             new Modulo('configuracion', 'configuracion', 'fa-gear', Nivel::SinAcceso, tecla: 'g'),
             new Modulo('auditoria', 'admin.auditoria', 'fa-clipboard-check', Nivel::SinAcceso, tecla: 'i'),
@@ -45,9 +46,7 @@ final class Modulos
      */
     public static function anunciados(): array
     {
-        return [
-            new Modulo('reportes', 'reportes', 'fa-chart-column', anunciado: true),
-        ];
+        return [];
     }
 
     /** @return list<string> */

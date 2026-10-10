@@ -215,3 +215,27 @@ perfil o por correo, no) y **nunca se guarda su valor**, ni cifrado; los
 por módulo, y no cuentan en el alta de un usuario. Lo que llega por la API
 queda a nombre del dueño del token. La pantalla es de quien administra;
 con Ver alcanza.
+
+**P21 — 2026-10-10 — Qué muestran los reportes.** El módulo 39 del kit,
+adaptado al pastoreo, con dompdf y la plantilla de impresión del kit:
+- **Período** en la URL, con atajos (este mes, 3, 6 y 12 meses desde un día
+  1); abre en **los últimos 3 meses**, una temporada de pastoreo. El campo
+  y el potrero elegidos también van en la URL; por omisión, el primer campo
+  activo y su potrero con más recorridas en el período.
+- **Resumen** contra el período anterior del mismo largo: recorridas,
+  puntos, potreros medidos y hectáreas medidas (la superficie de esos
+  potreros). Cuentan las recorridas activas con algún punto activo.
+- **Evolución de un potrero: una columna por recorrida**, no por día ni
+  por mes. Es la excepción a "los tramos vacíos se dibujan" (§11): un día
+  sin medir no es un potrero de 0 cm, y un promedio mensual borra el
+  crecimiento. La etiqueta de cada columna es su fecha. La **tasa de
+  crecimiento** se calcula contra la recorrida anterior del mismo período
+  (cm/día y kg MS/ha/día); si bajó, se lee "bajó", sin explicar por qué
+  (los pastoreos no se registran, P18).
+- **Potreros del campo**: la altura de la última recorrida del período,
+  los más altos primero.
+- **Disponibilidad forrajera** por campo: kg MS/ha de la última recorrida
+  del período × hectáreas, de los potreros con contorno y con fórmula; se
+  dice cuántos de los potreros del campo cubre.
+- **Actividad por recorredor**: recorridas y puntos.
+- CSV y PDF salen de las mismas tablas (`ExportadorReportes::secciones`).
