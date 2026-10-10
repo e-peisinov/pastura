@@ -121,3 +121,14 @@ sigue limitado a `/app`: el panel nunca se guarda en el celular y necesita
 señal. Se vuelve con "Abrir la app de campo" del menú del usuario. La sesión
 del panel queda guardada en la app, aparte de la del navegador. En el iPhone
 el cambio de alcance se toma al volver a agregar el ícono.
+
+**P15 — 2026-10-10 — El inicio avisa mientras la app no está lista sin
+señal.** En la primera prueba en un iPhone, la app no abrió en modo avión: el
+service worker no había quedado, aunque las mediciones sí (no se pudo
+reproducir; lo más probable es que iOS cortara la primera preparación al
+pasar enseguida a otra cosa). Antes eso se veía solo en Ajustes. Ahora
+`SinSenal` (`js/sin-senal.js`) da por lista la app cuando el service worker
+está activo **y** la página está guardada en la caché, y mientras no lo está
+el inicio muestra un aviso: "Preparando…" la primera vez, o que hay que
+abrirla con señal antes de salir al campo. Si falta, se reintenta al volver
+la señal.

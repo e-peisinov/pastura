@@ -31,6 +31,7 @@
     recorridas: [],
     vista: null,           // uuid de la recorrida que muestra Registros, o 'anteriores'
     cambioPotrero: null,   // uuid de la rechazada a la que se le está cambiando el potrero
+    sinSenal: null,        // si abre sin señal: SinSenal.preparar (preparando, lista, incompleta…)
     tab: 'inicio',
     fuente: null,          // 'camara' | 'foto' | null
     stream: null,
@@ -1085,16 +1086,31 @@
 
   /* ================= offline e instalación ================= */
 
+  // El inicio avisa mientras la app no está lista para abrir sin señal; si no
+  // lo está, se reintenta al volver la señal.
+  function mostrarSinSenal(r) {
+    estado.sinSenal = r.estado;
+    const texto = SinSenal.aviso(r);
+    $('#aviso-sin-senal').textContent = texto || '';
+    $('#aviso-sin-senal').hidden = !texto;
+    $('#estado-offline').textContent = SinSenal.textoAjustes(r);
+  }
+
+  async function prepararSinSenal() {
+    if (estado.sinSenal === 'preparando') return;
+    const r = await SinSenal.preparar({
+      sw: navigator.serviceWorker,
+      cajas: window.caches,
+      pagina: new URL('./', location.href).href,
+      alEsperar: () => mostrarSinSenal({ estado: 'preparando' }),
+    });
+    mostrarSinSenal(r);
+  }
+
   function iniciarOffline() {
-    const estadoTxt = $('#estado-offline');
-    if (!('serviceWorker' in navigator)) {
-      estadoTxt.textContent = 'Este navegador no permite usar la app sin conexión.';
-      return;
-    }
-    navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => {
-      estadoTxt.textContent = '✓ Lista para usar sin conexión.';
-    }).catch(e => {
-      estadoTxt.textContent = `No se pudo preparar el uso sin conexión (${e.message || e}).`;
+    prepararSinSenal();
+    window.addEventListener('online', () => {
+      if (estado.sinSenal !== 'lista' && estado.sinSenal !== 'sin-soporte') prepararSinSenal();
     });
 
     let eventoInstalar = null;

@@ -49,6 +49,7 @@
     <!-- INICIO: después de ingresar, elegir entre medir o gestionar en el panel (P12) -->
     <section id="tab-inicio" class="tab">
       <h1 id="inicio-saludo" class="inicio-saludo">Pasturómetro</h1>
+      <div id="aviso-sin-senal" class="aviso" role="status" hidden></div>
       <div class="opciones-inicio">
         <button id="btn-ir-recorrida" class="opcion-inicio" type="button">
           <strong id="ir-recorrida-titulo">Hacer una recorrida</strong>
@@ -238,7 +239,7 @@
       </div>
       <div class="tarjeta">
         <h2>Esta app</h2>
-        <p id="estado-offline" class="ayuda">Preparando uso sin conexión…</p>
+        <p id="estado-offline" class="ayuda">Revisando si está lista para usar sin señal…</p>
         <p id="ayuda-instalar" class="ayuda" hidden></p>
         <button id="btn-instalar" class="btn btn-secundario" hidden>Instalar en el celular</button>
         <p class="ayuda">Marcadores: ArUco 4×4, números 0 a 3.</p>
@@ -265,6 +266,7 @@
   <script src="js/api.js"></script>
   <script src="js/sincronizacion.js"></script>
   <script src="js/calibracion.js"></script>
+  <script src="js/sin-senal.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
