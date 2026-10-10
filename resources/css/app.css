@@ -1,0 +1,40 @@
+@import '@fortawesome/fontawesome-free/css/fontawesome.css';
+@import '@fortawesome/fontawesome-free/css/solid.css';
+@import '@fortawesome/fontawesome-free/css/regular.css';
+/* Mapas del panel (P5): Leaflet y la barra de dibujo de Geoman. */
+@import 'leaflet/dist/leaflet.css';
+@import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Alpine: oculta lo que lleva x-cloak hasta que Alpine inicializa (desplegables, toasts). */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Scroll fino (estandares-ux.md §6): barra angosta, gris y sin flechas, en el
+   sidebar y en cualquier caja con scroll propio (modales, listas con tope).
+   Firefox toma las dos primeras reglas; Chrome, Edge y Safari, las ::-webkit-. */
+.scroll-fino {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.300') transparent;
+}
+.scroll-fino::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.scroll-fino::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scroll-fino::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.300');
+    border-radius: 9999px;
+}
+.scroll-fino::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.gray.400');
+}
+.scroll-fino::-webkit-scrollbar-button {
+    display: none;
+}
