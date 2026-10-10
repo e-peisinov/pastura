@@ -45,7 +45,7 @@ class PermisosTest extends TestCase
 
         $esperado = [
             'tablero' => Nivel::Ver, 'campos' => Nivel::Ver,
-            'recorridas' => Nivel::Ver, 'usuarios' => Nivel::SinAcceso,
+            'recorridas' => Nivel::Editar, 'usuarios' => Nivel::SinAcceso,
         ];
 
         $this->assertSame($esperado, $recorredor->niveles());
@@ -79,8 +79,10 @@ class PermisosTest extends TestCase
         $recorredor = User::factory()->create();
 
         $this->assertTrue(Gate::forUser($admin)->allows('puedeEditar', 'usuarios'));
-        $this->assertTrue(Gate::forUser($recorredor)->allows('puedeVer', 'recorridas'));
-        $this->assertFalse(Gate::forUser($recorredor)->allows('puedeEditar', 'recorridas'));
+        // Sube y corrige sus recorridas (dominio.md, roles); los campos solo los mira.
+        $this->assertTrue(Gate::forUser($recorredor)->allows('puedeEditar', 'recorridas'));
+        $this->assertTrue(Gate::forUser($recorredor)->allows('puedeVer', 'campos'));
+        $this->assertFalse(Gate::forUser($recorredor)->allows('puedeEditar', 'campos'));
         $this->assertFalse(Gate::forUser($recorredor)->allows('puedeVer', 'usuarios'));
         $this->assertTrue($recorredor->can('puedeVer', 'campos'));
     }

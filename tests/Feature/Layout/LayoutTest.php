@@ -79,11 +79,10 @@ class LayoutTest extends TestCase
     {
         $html = $this->dashboardComo(User::factory()->admin()->create());
 
-        // Por ahora solo el tablero y usuarios tienen ruta; campos y recorridas
-        // están en la lista pero sin ruta, y no se muestran.
+        // Recorridas está en la lista pero todavía sin ruta: no se muestra.
         $this->assertStringContainsString('data-modulo="tablero"', $html);
+        $this->assertStringContainsString('data-modulo="campos"', $html);
         $this->assertStringContainsString('data-modulo="usuarios"', $html);
-        $this->assertStringNotContainsString('data-modulo="campos"', $html);
         $this->assertStringNotContainsString('data-modulo="recorridas"', $html);
     }
 

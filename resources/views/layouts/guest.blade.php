@@ -34,7 +34,7 @@
                     <img src="{{ asset('storage/'.$configuracion->logo_path) }}" alt="" class="h-16 w-16 rounded-lg object-contain">
                 @else
                     <span class="flex items-center justify-center h-16 w-16 rounded-lg text-2xl {{ Tema::acentoFondo() }}">
-                        <i class="fa-solid fa-wrench" aria-hidden="true"></i>
+                        <i class="fa-solid fa-seedling" aria-hidden="true"></i>
                     </span>
                 @endif
                 <span class="text-xl font-semibold text-gray-800" data-nombre-organizacion>{{ $configuracion->nombre }}</span>

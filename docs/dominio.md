@@ -112,7 +112,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Piezas de UI del kit (10 → 18), layout, acceso | Hecha |
 | Usuarios y permisos | Hecha |
 | Inicio (tablero) | En curso |
-| Campos y potreros (ABM, contorno en el mapa, importar KML/KMZ) | En curso |
+| Campos y potreros (ABM, contorno en el mapa, importar KML/KMZ) | Hecha |
 | Recorridas (listado, detalle con mapa de puntos, anular, descartar puntos, CSV) | Pendiente |
 | API de sincronización + login en la app de campo | Pendiente |
 | Reportes, configuración, auditoría | Más adelante |

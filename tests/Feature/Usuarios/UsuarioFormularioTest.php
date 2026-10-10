@@ -106,7 +106,7 @@ class UsuarioFormularioTest extends TestCase
             ->assertSet('email', 'marcos@pasturometro.test')
             ->assertSet('rol', 'recorredor')
             ->assertSet('permisos.usuarios', 'ver')
-            ->assertSet('permisos.recorridas', 'ver')
+            ->assertSet('permisos.recorridas', 'editar')
             ->assertDontSeeHtml('wire:model="contrasena"')
             ->set('nombre', 'Marcos Paz')
             ->set('permisos.usuarios', 'editar')

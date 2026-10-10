@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Actions\Logout;
+use App\Livewire\Campos\Campos;
 use App\Livewire\Tablero\Tablero;
 use App\Livewire\Usuarios\Usuarios;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,8 @@ Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'logi
 Route::middleware(['auth', 'verified'])->group(function () {
     // El tablero vive en /dashboard (D25); es un padre con un bloque por subcomponente (D45).
     Route::get('dashboard', Tablero::class)->name('dashboard')->middleware('modulo:tablero');
+    // Campos y, desde su ficha, sus potreros con el contorno en el mapa (P5).
+    Route::get('campos', Campos::class)->name('campos')->middleware('modulo:campos');
     // Usuarios (D49): alta, contraseña, baja lógica y la matriz de permisos de cada uno.
     Route::get('admin/usuarios', Usuarios::class)->name('admin.usuarios')->middleware('modulo:usuarios');
 });

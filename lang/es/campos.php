@@ -1,0 +1,81 @@
+<?php
+
+/*
+ * Textos de la pantalla de campos y de sus potreros.
+ */
+return [
+    'titulo' => 'Campos',
+    'nuevo' => 'Nuevo campo',
+    'modificar' => 'Modificar campo',
+    'buscar' => 'Buscar por nombre o localidad (mín. 2 letras)...',
+    'resultados_busqueda' => '{1} 1 resultado para ":texto"|[2,*] :count resultados para ":texto"',
+    'resultados_tope' => 'Se muestran los primeros :limite resultados. Afine la búsqueda para ver el resto.',
+    'columnas' => [
+        'campo' => 'Campo',
+        'potreros' => 'Potreros',
+        'superficie' => 'Superficie',
+        'ultima_recorrida' => 'Última recorrida',
+        'estado' => 'Estado',
+    ],
+    'potreros_count' => '{0} Sin potreros|{1} 1 potrero|[2,*] :count potreros',
+    'campos' => [
+        'nombre' => 'Nombre',
+        'localidad' => 'Localidad',
+        'observaciones' => 'Observaciones',
+    ],
+    'hectareas' => ':valor ha',
+    'sin_superficie' => 'Sin contorno',
+    'nunca' => 'Nunca',
+    'detalle' => [
+        'mapa' => 'Mapa',
+        'potreros' => 'Potreros',
+        'agregar_potrero' => 'Agregar potrero',
+        'sin_potreros' => 'Este campo todavía no tiene potreros.',
+        'sin_contornos' => 'Ningún potrero tiene el contorno cargado. Al cargarlos se ven acá.',
+        'superficie_total' => 'Superficie total',
+        'ultima' => 'Última: :fecha · :altura cm',
+        'sin_recorridas' => 'Sin recorridas',
+        'inactivo' => 'Inactivo',
+    ],
+    'sin_registros' => 'Todavía no hay campos cargados.',
+    'sin_resultados' => 'No hay campos que coincidan con el filtro.',
+    'confirmar_eliminar' => '¿Está seguro de que desea eliminar el campo ":nombre" y sus potreros? Esta acción no se puede deshacer.',
+    'confirmar_desactivar' => 'El campo ":nombre" tiene recorridas y no se puede eliminar. ¿Desea desactivarlo? Deja de ofrecerse en la app de campo; su historial se conserva.',
+    'toasts' => [
+        'creado' => 'Campo creado.',
+        'modificado' => 'Campo modificado.',
+        'eliminado' => 'Campo eliminado.',
+        'desactivado' => 'El campo tiene recorridas: se desactivó en vez de eliminarlo.',
+        'reactivado' => 'Campo reactivado.',
+    ],
+
+    'potrero' => [
+        'nuevo' => 'Nuevo potrero',
+        'modificar' => 'Modificar potrero',
+        'campos' => [
+            'nombre' => 'Nombre',
+            'tipo_pastura' => 'Pastura',
+            'observaciones' => 'Observaciones',
+            'contorno' => 'Contorno',
+        ],
+        'ayuda_tipo_pastura' => 'Por ejemplo: alfalfa, festuca, verdeo de avena.',
+        'ayuda_contorno' => 'Dibuje el contorno con las herramientas del mapa (polígono o rectángulo) o importe un archivo KML o KMZ de Google Earth. Los otros potreros del campo se ven punteados.',
+        'importar' => 'Importar KML / KMZ',
+        'borrar_contorno' => 'Borrar contorno',
+        'superficie' => 'Superficie: :valor ha',
+        'sin_contorno' => 'Sin contorno',
+        'error_sin_poligono' => 'El archivo no tiene ningún polígono. Exporte el potrero desde Google Earth como polígono.',
+        'error_archivo' => 'No se pudo leer el archivo. Use un KML o KMZ de Google Earth.',
+        'nombre_repetido' => 'Ya hay un potrero con ese nombre en este campo.',
+        'contorno_invalido' => 'El contorno no es un polígono válido.',
+        'confirmar_eliminar' => '¿Está seguro de que desea eliminar el potrero ":nombre"? Esta acción no se puede deshacer.',
+        'confirmar_desactivar' => 'El potrero ":nombre" tiene recorridas y no se puede eliminar. ¿Desea desactivarlo? Deja de ofrecerse en la app de campo; su historial se conserva.',
+        'toasts' => [
+            'creado' => 'Potrero creado.',
+            'modificado' => 'Potrero modificado.',
+            'eliminado' => 'Potrero eliminado.',
+            'desactivado' => 'El potrero tiene recorridas: se desactivó en vez de eliminarlo.',
+            'reactivado' => 'Potrero reactivado.',
+        ],
+    ],
+];
