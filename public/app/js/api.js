@@ -48,6 +48,7 @@ const Api = (() => {
     ingresar: (email, password, dispositivo) => pedir('POST', 'ingreso', { email, password, dispositivo }),
     salir: () => pedir('POST', 'salida'),
     yo: () => pedir('GET', 'yo'),
+    enlacePanel: () => pedir('POST', 'enlace-panel'),
     campos: () => pedir('GET', 'campos'),
     subirRecorrida: (uuid, cuerpo) => pedir('PUT', `recorridas/${encodeURIComponent(uuid)}`, cuerpo),
   };

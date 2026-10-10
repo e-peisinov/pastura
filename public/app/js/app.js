@@ -31,7 +31,7 @@
     recorridas: [],
     vista: null,           // uuid de la recorrida que muestra Registros, o 'anteriores'
     cambioPotrero: null,   // uuid de la rechazada a la que se le está cambiando el potrero
-    tab: 'medir',
+    tab: 'inicio',
     fuente: null,          // 'camara' | 'foto' | null
     stream: null,
     foto: null,
@@ -689,6 +689,70 @@
     $('#vista-camara').hidden = !tabConCamara();
     $('#medir-arriba').hidden = tab !== 'medir';
     if (tab === 'registros') pintarRegistros();
+    if (tab === 'inicio') pintarInicio();
+  }
+
+  /* ================= inicio: medir o ir al panel (P12) ================= */
+
+  function pintarInicio() {
+    const u = estado.sesion && estado.sesion.usuario;
+    $('#inicio-saludo').textContent = u ? `Hola, ${u.nombre.split(' ')[0]}` : 'Pasturómetro';
+
+    const abierta = recorridaAbierta();
+    const recorrida = $('#btn-ir-recorrida');
+    recorrida.disabled = !!u && !puedeRecorrer();
+    if (recorrida.disabled) {
+      $('#ir-recorrida-titulo').textContent = 'Hacer una recorrida';
+      $('#ir-recorrida-detalle').textContent = 'Tu usuario no tiene permiso para hacer recorridas. Pedíselo a la administración.';
+    } else if (abierta) {
+      const puntos = medicionesDe(abierta.uuid).length;
+      $('#ir-recorrida-titulo').textContent = 'Seguir la recorrida';
+      $('#ir-recorrida-detalle').textContent = `${abierta.potreroNombre} · ${abierta.campoNombre} · ${puntos} ${puntos === 1 ? 'punto' : 'puntos'}`;
+    } else {
+      $('#ir-recorrida-titulo').textContent = 'Hacer una recorrida';
+      $('#ir-recorrida-detalle').textContent = 'Medir la altura del pasto con la cámara, con o sin señal.';
+    }
+
+    $('#btn-ir-panel').disabled = !navigator.onLine;
+    $('#ir-panel-detalle').textContent = navigator.onLine
+      ? 'Campos, potreros, recorridas y usuarios. Se abre en el navegador.'
+      : 'Necesitás conexión para entrar al panel.';
+  }
+
+  function irARecorrida() {
+    if (!estado.sesion) { mostrarIngreso(false); return; }
+    irA('medir');
+  }
+
+  // El panel se abre con un enlace de un solo uso, sin volver a escribir la
+  // contraseña. La ventana se abre antes de pedir el enlace: si se abriera
+  // después de esperar al servidor, el navegador la bloquearía.
+  async function irAlPanel() {
+    if (!estado.sesion || estado.sesionVencida) { mostrarIngreso(false); return; }
+    if (!navigator.onLine) { toast('Necesitás conexión para entrar al panel', 'mal'); return; }
+    const boton = $('#btn-ir-panel');
+    if (boton.dataset.abriendo) return;
+    boton.dataset.abriendo = '1';
+    const ventana = window.open('', '_blank');
+    try {
+      const { url } = await Api.enlacePanel();
+      if (ventana && !ventana.closed) {
+        ventana.opener = null;
+        ventana.location.replace(url);
+      } else {
+        location.assign(url);
+      }
+    } catch (e) {
+      if (ventana) ventana.close();
+      if (e.estado === 401) {
+        await sesionVencida();
+        mostrarIngreso(false);
+      } else {
+        toast(e.estado === 0 ? 'Sin conexión con el panel' : e.message, 'mal');
+      }
+    } finally {
+      delete boton.dataset.abriendo;
+    }
   }
 
   function actualizarBotones() {
@@ -698,7 +762,8 @@
     $('#btn-medir').disabled = !hayFuente || !estado.cal || capturando || !abierta;
     $('#btn-capturar').disabled = !hayFuente || capturando;
     $('#aviso-calibrar').hidden = !!estado.cal;
-    $('#nueva-recorrida').hidden = !!abierta || !estado.sesion;
+    $('#nueva-recorrida').hidden = !!abierta || !estado.sesion || !puedeRecorrer();
+    $('#aviso-permiso').hidden = !estado.sesion || puedeRecorrer();
     $('#recorrida-actual').hidden = !abierta;
     if (abierta) {
       const puntos = medicionesDe(abierta.uuid).length;
@@ -708,6 +773,32 @@
   }
 
   /* ================= sesión (P10) ================= */
+
+  // Las sesiones guardadas antes de P12 no traen `puede_recorrer`: solo
+  // podían ingresar los que tenían el permiso.
+  function puedeRecorrer() {
+    const u = estado.sesion && estado.sesion.usuario;
+    return !!u && u.puede_recorrer !== false;
+  }
+
+  // El rol o los permisos pueden cambiar en el panel: se repasan al abrir la app.
+  async function refrescarUsuario() {
+    if (!estado.sesion || estado.sesionVencida || !navigator.onLine) return;
+    try {
+      const { usuario } = await Api.yo();
+      estado.sesion = { ...estado.sesion, usuario };
+      await DB.guardar('sesion', estado.sesion);
+      actualizarBotones();
+      pintarCuenta();
+      pintarInicio();
+      if (puedeRecorrer()) {
+        await cargarCatalogo();
+        sincronizar();
+      }
+    } catch (e) {
+      if (e.estado === 401) await sesionVencida();
+    }
+  }
 
   function mostrarIngreso(obligatorio) {
     $('#pantalla-ingreso').hidden = false;
@@ -744,8 +835,11 @@
       pintarCuenta();
       actualizarBotones();
       pintarRegistros();
-      await cargarCatalogo();
-      sincronizar();
+      irA('inicio');
+      if (puedeRecorrer()) {
+        await cargarCatalogo();
+        sincronizar();
+      }
     } catch (err) {
       error.textContent = err.estado === 0
         ? 'Sin conexión con el panel. Para ingresar hace falta señal (solo la primera vez).'
@@ -766,6 +860,7 @@
     pintarCuenta();
     actualizarBotones();
     pintarRegistros();
+    irA('inicio');
     mostrarIngreso(true);
   }
 
@@ -773,6 +868,7 @@
     if (estado.sesionVencida) return;
     estado.sesionVencida = true;
     pintarSync();
+    pintarInicio();
     toast('La sesión venció. Ingresá de nuevo para subir las recorridas.', 'medio');
   }
 
@@ -788,7 +884,7 @@
   /* ================= campos y potreros ================= */
 
   async function cargarCatalogo({ avisar = false } = {}) {
-    if (!estado.sesion) return;
+    if (!estado.sesion || !puedeRecorrer()) return;
     try {
       estado.catalogo = await Api.campos();
       await DB.guardar('catalogo', estado.catalogo);
@@ -796,6 +892,7 @@
       if (avisar) toast('Lista de campos actualizada');
     } catch (e) {
       if (e.estado === 401) await sesionVencida();
+      else if (e.estado === 403) await refrescarUsuario();
       else if (avisar) toast(e.estado === 0 ? 'Sin conexión con el panel' : e.message, 'mal');
     }
   }
@@ -975,6 +1072,7 @@
       if (forzar) mostrarIngreso(false);
       return;
     }
+    if (!puedeRecorrer()) { pintarSync(); return; }
     if (!navigator.onLine && !forzar) { pintarSync(); return; }
     try {
       const r = await cola.procesar(estado.sesion.usuario.id, { forzar });
@@ -1045,6 +1143,7 @@
     pintarCuenta();
     pintarRegistros();
     actualizarBotones();
+    irA('inicio');
     if (!estado.sesion) mostrarIngreso(true);
 
     $('#btn-camara').addEventListener('click', activarCamara);
@@ -1071,6 +1170,8 @@
       toast('Calibración borrada');
     });
 
+    $('#btn-ir-recorrida').addEventListener('click', irARecorrida);
+    $('#btn-ir-panel').addEventListener('click', irAlPanel);
     $('#form-ingreso').addEventListener('submit', ingresar);
     $('#btn-cancelar-ingreso').addEventListener('click', () => { $('#pantalla-ingreso').hidden = true; });
     document.querySelectorAll('[data-ingresar]').forEach(b => b.addEventListener('click', () => mostrarIngreso(false)));
@@ -1131,12 +1232,13 @@
     siguiente(bucle);
 
     // La cola sube sola: al volver la señal, al volver a la app y cada minuto.
-    window.addEventListener('online', () => sincronizar());
-    window.addEventListener('offline', pintarSync);
+    window.addEventListener('online', () => { pintarInicio(); sincronizar(); });
+    window.addEventListener('offline', () => { pintarInicio(); pintarSync(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizar(); });
     setInterval(() => sincronizar(), 60000);
     if (estado.sesion && navigator.onLine) cargarCatalogo();
     sincronizar();
+    refrescarUsuario();
   }
 
   iniciar().catch(e => {

@@ -10,8 +10,8 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
 /**
- * El ingreso de la app de campo con el usuario del panel (P10): token por
- * celular, usuarios dados de baja, permiso Editar en Recorridas y salida.
+ * El ingreso de la app de campo con el usuario del panel (P10, P12): token
+ * por celular, usuarios dados de baja, permiso Editar en Recorridas y salida.
  */
 class IngresoApiTest extends TestCase
 {
@@ -41,7 +41,8 @@ class IngresoApiTest extends TestCase
         $respuesta = $this->ingresar()->assertOk()
             ->assertJsonPath('usuario.id', $this->juan->id)
             ->assertJsonPath('usuario.nombre', 'Juan Pérez')
-            ->assertJsonPath('usuario.rol', 'recorredor');
+            ->assertJsonPath('usuario.rol', 'recorredor')
+            ->assertJsonPath('usuario.puede_recorrer', true);
 
         $this->assertNotEmpty($respuesta->json('token'));
         $this->assertSame('iPhone · Safari 18', $this->juan->tokens()->sole()->name);
@@ -70,11 +71,18 @@ class IngresoApiTest extends TestCase
         $this->assertSame(0, PersonalAccessToken::count());
     }
 
-    public function test_sin_editar_en_recorridas_no_ingresa(): void
+    public function test_sin_editar_en_recorridas_ingresa_igual_pero_no_puede_recorrer(): void
     {
+        // P12: la app es también la puerta al panel; el permiso se mira al subir.
         $this->juan->asignarNivel('recorridas', Nivel::Ver);
 
-        $this->ingresar()->assertForbidden()->assertJsonPath('message', __('api.sin_permiso'));
+        $token = $this->ingresar()->assertOk()
+            ->assertJsonPath('usuario.puede_recorrer', false)
+            ->json('token');
+
+        $this->withToken($token)->getJson('/api/v1/yo')->assertOk()->assertJsonPath('usuario.puede_recorrer', false);
+        $this->withToken($token)->getJson('/api/v1/campos')->assertForbidden()->assertJsonPath('message', __('api.sin_permiso'));
+        $this->withToken($token)->putJson('/api/v1/recorridas/6f1c2a7e-0b1d-4c3e-9f20-1a2b3c4d5e6f', [])->assertForbidden();
     }
 
     public function test_limita_los_intentos_de_ingreso(): void
@@ -121,6 +129,8 @@ class IngresoApiTest extends TestCase
         $this->juan->update(['activo' => false]);
 
         $this->withToken($token)->getJson('/api/v1/campos')->assertUnauthorized();
+        $this->withToken($token)->getJson('/api/v1/yo')->assertUnauthorized();
+        $this->withToken($token)->postJson('/api/v1/enlace-panel')->assertUnauthorized();
     }
 
     public function test_si_le_quitan_editar_en_recorridas_recibe_403(): void
@@ -129,5 +139,6 @@ class IngresoApiTest extends TestCase
         $this->juan->asignarNivel('recorridas', Nivel::Ver);
 
         $this->withToken($token)->getJson('/api/v1/campos')->assertForbidden();
+        $this->withToken($token)->getJson('/api/v1/yo')->assertOk()->assertJsonPath('usuario.puede_recorrer', false);
     }
 }

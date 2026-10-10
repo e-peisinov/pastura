@@ -46,8 +46,26 @@
   </header>
 
   <main>
+    <!-- INICIO: después de ingresar, elegir entre medir o gestionar en el panel (P12) -->
+    <section id="tab-inicio" class="tab">
+      <h1 id="inicio-saludo" class="inicio-saludo">Pasturómetro</h1>
+      <div class="opciones-inicio">
+        <button id="btn-ir-recorrida" class="opcion-inicio" type="button">
+          <strong id="ir-recorrida-titulo">Hacer una recorrida</strong>
+          <span id="ir-recorrida-detalle">Medir la altura del pasto con la cámara, con o sin señal.</span>
+        </button>
+        <button id="btn-ir-panel" class="opcion-inicio" type="button">
+          <strong>Ir al panel</strong>
+          <span id="ir-panel-detalle">Campos, potreros, recorridas y usuarios. Se abre en el navegador.</span>
+        </button>
+      </div>
+    </section>
+
     <!-- MEDIR, arriba de la cámara: la recorrida en curso o elegir dónde medir -->
     <div id="medir-arriba">
+      <div id="aviso-permiso" class="aviso" hidden>
+        Tu usuario no tiene permiso para hacer recorridas. Pedíselo a la administración del panel.
+      </div>
       <div id="aviso-sesion" class="aviso" hidden>
         La sesión venció: las recorridas quedan guardadas en el celular. <button class="link" data-ingresar>Ingresar de nuevo</button> para subirlas.
       </div>
@@ -230,7 +248,8 @@
   </main>
 
   <nav class="tabs">
-    <button data-tab="medir" class="activa">Medir</button>
+    <button data-tab="inicio" class="activa">Inicio</button>
+    <button data-tab="medir">Medir</button>
     <button data-tab="calibrar">Calibrar</button>
     <button data-tab="registros">Registros</button>
     <button data-tab="ajustes">Ajustes</button>

@@ -96,6 +96,12 @@
                 <i class="fa-solid fa-user w-5 text-center text-gray-400" aria-hidden="true"></i>
                 {{ __('layout.usuario.perfil') }}
             </a>
+            {{-- La app de campo, en /app del mismo servidor (P9, P12): no es Livewire, sin wire:navigate. --}}
+            <a href="{{ url('app') }}/" role="menuitem" data-abrir-app data-fuera-del-panel
+               class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100">
+                <i class="fa-solid fa-mobile-screen w-5 text-center text-gray-400" aria-hidden="true"></i>
+                {{ __('layout.usuario.abrir_app') }}
+            </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" role="menuitem"

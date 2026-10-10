@@ -75,6 +75,16 @@ class LayoutTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/<form method="POST"[^>]*wire:navigate/', $html);
     }
 
+    public function test_el_menu_del_usuario_abre_la_app_de_campo(): void
+    {
+        $html = $this->dashboardComo(User::factory()->create());
+
+        // P12: la app vive en /app del mismo servidor. Es otra página (sin
+        // wire:navigate) y no se abre en una pestaña nueva.
+        $this->assertMatchesRegularExpression('#<a href="'.preg_quote(url('app').'/', '#').'" role="menuitem"[^>]*data-abrir-app#', $html);
+        $this->assertStringContainsString(__('layout.usuario.abrir_app'), $html);
+    }
+
     public function test_el_sidebar_muestra_los_modulos_que_ya_tienen_ruta(): void
     {
         $html = $this->dashboardComo(User::factory()->admin()->create());

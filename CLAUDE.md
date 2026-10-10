@@ -93,7 +93,8 @@ estándar primero y después la pantalla.
   la cámara, el GPS y el service worker. GitHub Pages quedó congelado en la
   última versión de `poc/`.
 - Habla con el panel solo por `../api/v1/` (`js/api.js`), con el token del
-  ingreso. La cola de subida (`js/sincronizacion.js`) no toca la pantalla ni
+  ingreso. Es también la puerta al panel: su inicio ofrece hacer una
+  recorrida o ir al panel con un enlace de un solo uso (P12). La cola de subida (`js/sincronizacion.js`) no toca la pantalla ni
   IndexedDB: se prueba en Node con `npm run test:app`, **test primero**.
 - Al cambiar un archivo de `public/app/`, subir `VERSION` en
   `public/app/sw.js` si cambia la lista de archivos; el service worker

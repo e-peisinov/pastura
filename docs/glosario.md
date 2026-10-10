@@ -70,3 +70,11 @@ a la cola y el panel actualiza por su uuid.
 **Ingreso** — Entrar a la app con el usuario y la contraseña del panel. Deja
 un **token** guardado en el celular para subir sin volver a escribir la
 contraseña (P10). *Evitar:* login (en pantalla).
+
+**Inicio (de la app)** — La primera pantalla después de ingresar: elegir
+entre **Hacer una recorrida** e **Ir al panel** (P12). No confundir con el
+**Inicio del panel**, que es el tablero.
+
+**Ir al panel** — Abrir el panel desde la app con la sesión ya iniciada, sin
+volver a escribir la contraseña. Usa un enlace de un solo uso que vence en
+un minuto (P12). Necesita señal.

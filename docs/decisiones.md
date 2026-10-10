@@ -63,7 +63,7 @@ recorredor puede pasar días sin señal y tiene que poder subir al volver sin
 reloguearse. Los tokens no vencen, pero se revocan al salir de la app, y en
 cada pedido se revisa que el usuario siga activo (si no, 401). Toda la API,
 salvo el ingreso, pide Editar en Recorridas; el ingreso rechaza a quien no lo
-tiene. Sanctum queda solo con tokens (`guard` vacío): la API no mira la
+tiene (cambiado por P12: ese permiso se pide para bajar campos y subir). Sanctum queda solo con tokens (`guard` vacío): la API no mira la
 cookie de sesión del panel aunque compartan origen.
 
 **P11 — 2026-10-10 — Reglas de la sincronización.** `PUT /api/v1/recorridas/{uuid}`
@@ -78,3 +78,18 @@ lo vuelva a subir. Las fechas llegan en ISO 8601 con zona y se guardan en la
 hora del servidor. Si el panel rechaza una recorrida, la app deja cambiarle
 el potrero (misma recorrida, nueva versión) y la vuelve a subir; el panel la
 mueve de potrero con todas sus mediciones.
+
+
+**P12 — 2026-10-10 — La app es la puerta de entrada: desde ahí se mide o se
+va al panel.** Después de ingresar, la app muestra un inicio con dos
+opciones: **Hacer una recorrida** e **Ir al panel**. Entra cualquier usuario
+activo; Editar en Recorridas se pide solo para bajar los campos y subir
+recorridas (`puede_recorrer` en el usuario que devuelve la API), y sin ese
+permiso la opción de medir queda deshabilitada con el motivo. Para no volver
+a escribir la contraseña, la app pide con su token `POST /api/v1/enlace-panel`
+y recibe un enlace firmado que vence en un minuto y sirve una sola vez (el
+pase se guarda en la caché y se consume al usarlo); el enlace abre la sesión
+del panel de ese usuario, reemplazando la que hubiera en ese navegador, y
+lleva al tablero. Se descartó compartir una sola sesión entre las dos partes
+(P10: la app necesita un token que no venza sin señal). El panel suma
+"Abrir la app de campo" en el menú del usuario.

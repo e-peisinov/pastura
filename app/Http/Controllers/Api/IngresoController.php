@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Ingreso y salida de la app de campo con el usuario del panel (P10). Cada
- * ingreso crea un token con el nombre del celular; salir lo revoca.
+ * Ingreso y salida de la app de campo con el usuario del panel (P10, P12).
+ * Cada ingreso crea un token con el nombre del celular; salir lo revoca.
  */
 class IngresoController extends Controller
 {
@@ -32,10 +32,6 @@ class IngresoController extends Controller
 
         if (! $usuario->activo) {
             return response()->json(['message' => __('auth.inactivo')], 403);
-        }
-
-        if (! $usuario->puedeEditar('recorridas')) {
-            return response()->json(['message' => __('api.sin_permiso')], 403);
         }
 
         $token = $usuario->createToken($datos['dispositivo'] ?? 'App de campo');
@@ -66,6 +62,8 @@ class IngresoController extends Controller
             'nombre' => $usuario->name,
             'email' => $usuario->email,
             'rol' => $usuario->rol->value,
+            // P12: entra cualquiera activo; sin Editar en Recorridas, la app solo lleva al panel.
+            'puede_recorrer' => $usuario->puedeEditar('recorridas'),
         ];
     }
 }

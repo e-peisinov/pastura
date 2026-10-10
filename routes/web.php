@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaseAlPanelController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\Campos\Campos;
 use App\Livewire\Recorridas\Recorridas;
@@ -9,6 +10,9 @@ use Illuminate\Support\Facades\Route;
 
 // La raíz no tiene pantalla propia (D52): sin sesión va al login, con sesión al tablero.
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('inicio');
+
+// Entrar al panel desde la app con un enlace firmado de un solo uso (P12).
+Route::get('entrar-desde-app/{pase}', [PaseAlPanelController::class, 'entrar'])->name('entrar-desde-app');
 
 // Pantallas del sistema: componentes Livewire de clase (regla 6). Cada ruta
 // pide al menos Ver en su módulo (`modulo:<nombre>`, D49); Sin acceso da 403.

@@ -199,7 +199,9 @@ class PiezasPantallaTest extends TestCase
     public function test_ningun_enlace_interno_quedo_sin_wire_navigate(): void
     {
         // D31: se revisan los <a href> escritos a mano; los de <x-ui.boton> y
-        // <x-ui.accion> lo ponen solos. Quedan afuera tel:, mailto: y externos.
+        // <x-ui.accion> lo ponen solos. Quedan afuera tel:, mailto:, externos
+        // y los que salen del panel a otra aplicación del mismo servidor
+        // (`data-fuera-del-panel`, como la app de campo en /app, P12).
         $sinNavegar = [];
         $vistas = array_merge(
             glob(resource_path('views/livewire/**/*.blade.php')),
@@ -211,7 +213,8 @@ class PiezasPantallaTest extends TestCase
             preg_match_all('~<a\s+href="([^"]*)"([^>]*)>~s', file_get_contents($archivo), $coincidencias, PREG_SET_ORDER);
 
             foreach ($coincidencias as [$etiqueta, $href, $resto]) {
-                $externo = str_starts_with($href, 'http') || str_starts_with($href, 'tel:') || str_starts_with($href, 'mailto:');
+                $externo = str_starts_with($href, 'http') || str_starts_with($href, 'tel:') || str_starts_with($href, 'mailto:')
+                    || str_contains($resto, 'data-fuera-del-panel');
 
                 if (! $externo && ! str_contains($resto, 'wire:navigate') && ! str_contains($resto, '$navegaConLivewire')) {
                     $sinNavegar[] = basename($archivo).': '.$etiqueta;

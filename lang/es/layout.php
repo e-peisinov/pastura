@@ -27,6 +27,7 @@ return [
     'usuario' => [
         'menu' => 'Menú del usuario',
         'perfil' => 'Perfil',
+        'abrir_app' => 'Abrir la app de campo',
         'cerrar_sesion' => 'Cerrar sesión',
     ],
 
