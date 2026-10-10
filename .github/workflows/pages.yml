@@ -1,12 +1,10 @@
 # Publicaba la app de campo (poc/) en GitHub Pages. La app pasó a public/app/
-# y se sirve desde el servidor del panel (P9): este workflow ya no corre y se
-# borra cuando el servidor esté andando.
+# y se sirve desde el servidor del panel (P9). poc/ ya no existe: el sitio de
+# Pages queda congelado en su última publicación y este workflow solo corre a
+# mano. Se borra cuando el servidor esté andando.
 name: Publicar app de campo
 
 on:
-  push:
-    branches: [main]
-    paths: ['poc/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
