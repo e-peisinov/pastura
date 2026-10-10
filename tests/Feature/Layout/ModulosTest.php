@@ -68,24 +68,24 @@ class ModulosTest extends TestCase
             $this->assertStringStartsWith('fa-', $modulo->icono);
         }
 
-        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios', 'configuracion'], Modulos::nombres());
+        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios', 'configuracion', 'auditoria'], Modulos::nombres());
         $this->assertSame($this->nombres($todos), Modulos::nombres());
         $this->assertSame('usuarios', Modulos::porNombre('usuarios')?->nombre);
         $this->assertSame('admin.usuarios', Modulos::porNombre('usuarios')->ruta);
 
         // Todos ya tienen ruta: el administrador los ve todos.
         $admin = User::factory()->admin()->create();
-        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios', 'configuracion'], $this->nombres(Modulos::visibles($admin)));
+        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios', 'configuracion', 'auditoria'], $this->nombres(Modulos::visibles($admin)));
         $this->assertNull(Modulos::porNombre('inexistente'));
     }
 
-    public function test_el_recorredor_nace_sin_acceso_a_usuarios_y_configuracion(): void
+    public function test_el_recorredor_nace_sin_acceso_a_usuarios_configuracion_y_auditoria(): void
     {
         $sinAcceso = collect(Modulos::todos())
             ->filter(fn (Modulo $m) => $m->porOmision(Rol::Recorredor) === Nivel::SinAcceso)
             ->pluck('nombre')->all();
 
-        $this->assertEqualsCanonicalizing(['usuarios', 'configuracion'], $sinAcceso);
+        $this->assertEqualsCanonicalizing(['usuarios', 'configuracion', 'auditoria'], $sinAcceso);
 
         foreach (Modulos::todos() as $modulo) {
             $this->assertSame(Nivel::Editar, $modulo->porOmision(Rol::Admin));

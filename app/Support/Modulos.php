@@ -30,6 +30,7 @@ final class Modulos
             new Modulo('recorridas', 'recorridas', 'fa-route', Nivel::Editar, tecla: 'r'),
             new Modulo('usuarios', 'admin.usuarios', 'fa-user-gear', Nivel::SinAcceso, tecla: 'u'),
             new Modulo('configuracion', 'configuracion', 'fa-gear', Nivel::SinAcceso, tecla: 'g'),
+            new Modulo('auditoria', 'admin.auditoria', 'fa-clipboard-check', Nivel::SinAcceso, tecla: 'i'),
         ];
     }
 

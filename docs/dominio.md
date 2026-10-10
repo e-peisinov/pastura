@@ -22,6 +22,7 @@ campos 1──* potreros 1──* recorridas 1──* mediciones
 users 1───────────────────┘   (quién hizo la recorrida)
 users 1──* permisos           (matriz por módulo, D49)
 configuracion                 (fila única: nombre, logo, color, parámetros)
+auditoria                     (una fila por acción sensible, P18 y P20)
 ```
 
 ### campos
@@ -71,6 +72,15 @@ MS/ha.
 Fila única (marca blanca, D8): `nombre`, `logo_path`, `color_acento`, y los
 parámetros del seguimiento (P17): `dias_sin_medir` (7 al instalar) y
 `puntos_minimos` (20 al instalar).
+
+### auditoria
+
+Una fila por acción sensible (P18, P20): `user_id` (null = sistema),
+`entidad`, `entidad_id` (sin clave foránea: la fila sobrevive al borrado),
+`accion` (creado | modificado | eliminado), `datos` (la foto para leerla:
+referencia y, en un cambio, cada campo con antes y después) y solo
+`created_at`. La escriben los eventos de los modelos (trait `Auditable`);
+el texto se arma al leer.
 
 ### recorridas
 
@@ -127,6 +137,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Recorridas | Editar | Editar (solo las suyas) |
 | Usuarios | Editar | Sin acceso |
 | Configuración | Editar | Sin acceso |
+| Auditoría | Editar (con Ver alcanza: no se edita nada) | Sin acceso |
 
 ## Alcance
 
@@ -141,4 +152,5 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Inicio de la app: hacer una recorrida o ir al panel sin volver a ingresar (P12) | Hecha |
 | Configuración: organización, tipos de pastura, parámetros (P16, P17) | Hecha |
 | kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Hecha |
-| Reportes, auditoría (P18) | Más adelante |
+| Auditoría de lo sensible (P18, P20) | Hecha |
+| Reportes con CSV y PDF (P18) | Más adelante |

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EntidadAuditada;
+use App\Models\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  */
 class Campo extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'nombre',
@@ -31,6 +33,29 @@ class Campo extends Model
         return [
             'activo' => 'boolean',
         ];
+    }
+
+    // ----- Auditoría (P18): desactivar y borrar ------------------------------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::Campo;
+    }
+
+    protected function camposAuditados(): array
+    {
+        return ['activo'];
+    }
+
+    protected function auditaBaja(): bool
+    {
+        return true;
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        return ['nombre' => $this->nombre];
     }
 
     public function potreros(): HasMany

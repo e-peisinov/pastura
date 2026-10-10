@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\ColorAcento;
+use App\Enums\EntidadAuditada;
+use App\Models\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Configuracion extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /** Valores con los que arranca una instalación (P17). */
     public const DIAS_SIN_MEDIR = 7;
@@ -36,6 +38,24 @@ class Configuracion extends Model
             'dias_sin_medir' => 'integer',
             'puntos_minimos' => 'integer',
         ];
+    }
+
+    // ----- Auditoría (P18): los parámetros, no la marca -----------------------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::Configuracion;
+    }
+
+    protected function camposAuditados(): array
+    {
+        return ['dias_sin_medir', 'puntos_minimos'];
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        return [];
     }
 
     /**

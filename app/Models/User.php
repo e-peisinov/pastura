@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\EntidadAuditada;
 use App\Enums\Nivel;
 use App\Enums\Rol;
+use App\Models\Traits\Auditable;
 use App\Support\Modulos;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,13 +13,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     // Los tokens de la app de campo (P10).
-    use HasApiTokens, HasFactory, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, Notifiable;
 
     /** El módulo cuya edición nunca puede quedar sin un usuario activo (D49). */
     public const MODULO_USUARIOS = 'usuarios';
@@ -139,11 +142,61 @@ class User extends Authenticatable
      */
     public function asignarNiveles(array $niveles): void
     {
+        // Un usuario recién creado nace con su matriz: eso no es un cambio de permisos (P18).
+        $antes = $this->wasRecentlyCreated ? null : $this->niveles();
+
         foreach ($niveles as $modulo => $nivel) {
             $this->permisos()->updateOrCreate(['modulo' => $modulo], ['nivel' => $nivel]);
         }
 
         $this->unsetRelation('permisos');
+
+        if ($antes === null) {
+            return;
+        }
+
+        $cambios = [];
+        foreach ($niveles as $modulo => $nivel) {
+            if (($antes[$modulo] ?? null) !== $nivel) {
+                $cambios['permiso.'.$modulo] = [($antes[$modulo] ?? null)?->etiqueta(), $nivel->etiqueta()];
+            }
+        }
+
+        $this->auditarCambios($cambios);
+    }
+
+    // ----- Auditoría (P18): rol, estado, permisos y contraseña ---------------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::Usuario;
+    }
+
+    /**
+     * La contraseña, solo cuando la cambia otro (el administrador): la que
+     * cambia cada uno en su perfil o con el correo de recuperación no.
+     */
+    protected function camposAuditados(): array
+    {
+        $campos = ['rol', 'activo'];
+
+        if (Auth::check() && Auth::id() !== $this->id) {
+            $campos[] = 'password';
+        }
+
+        return $campos;
+    }
+
+    /** La contraseña nunca va a la foto, ni cifrada. */
+    protected function valorParaAuditoria(string $campo, mixed $valor): mixed
+    {
+        return $campo === 'password' ? null : $this->valorAuditableComun($valor);
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        return ['nombre' => $this->name, 'email' => $this->email];
     }
 
     public function scopeActivos(Builder $query): Builder

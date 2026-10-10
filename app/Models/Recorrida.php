@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EntidadAuditada;
+use App\Models\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +22,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Recorrida extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'uuid',
@@ -41,6 +43,47 @@ class Recorrida extends Model
         return [
             'iniciada_en' => 'datetime',
             'activo' => 'boolean',
+        ];
+    }
+
+    // ----- Auditoría (P18): anular, reactivar, mover de potrero ------------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::Recorrida;
+    }
+
+    /** La subida (alta y cambios de la app) no se audita: sí anularla y moverla. */
+    protected function camposAuditados(): array
+    {
+        return ['activo', 'potrero_id'];
+    }
+
+    protected function valorParaAuditoria(string $campo, mixed $valor): mixed
+    {
+        return $campo === 'potrero_id' ? Potrero::query()->find($valor)?->nombreCompleto() : $this->valorAuditableComun($valor);
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        return self::referenciaAuditoria($this);
+    }
+
+    /**
+     * La recorrida en la foto de su fila y de la de sus puntos: potrero (el
+     * de ahora), día y recorredor.
+     *
+     * @return array<string, mixed>
+     */
+    public static function referenciaAuditoria(self $recorrida): array
+    {
+        return [
+            'recorrida_id' => $recorrida->id,
+            'potrero_id' => $recorrida->potrero_id,
+            'potrero' => Potrero::query()->find($recorrida->potrero_id)?->nombreCompleto(),
+            'fecha' => $recorrida->iniciada_en?->toDateString(),
+            'recorredor' => User::query()->whereKey($recorrida->user_id)->value('name'),
         ];
     }
 

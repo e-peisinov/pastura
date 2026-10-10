@@ -10,6 +10,20 @@ return [
         'ver' => 'Ver',
         'editar' => 'Editar',
     ],
+    'accion_auditada' => [
+        'creado' => 'Alta',
+        'modificado' => 'Cambio',
+        'eliminado' => 'Baja',
+    ],
+    'entidad_auditada' => [
+        'recorrida' => 'Recorrida',
+        'medicion' => 'Punto',
+        'potrero' => 'Potrero',
+        'campo' => 'Campo',
+        'usuario' => 'Usuario',
+        'tipo_pastura' => 'Tipo de pastura',
+        'configuracion' => 'Parámetros',
+    ],
     'estado_potrero' => [
         'listo' => 'Listo para pastorear',
         'en_crecimiento' => 'En crecimiento',

@@ -17,6 +17,8 @@ class ConfiguracionFactory extends Factory
             'nombre' => 'Pasturómetro',
             'logo_path' => null,
             'color_acento' => ColorAcento::Green,
+            'dias_sin_medir' => Configuracion::DIAS_SIN_MEDIR,
+            'puntos_minimos' => Configuracion::PUNTOS_MINIMOS,
         ];
     }
 }

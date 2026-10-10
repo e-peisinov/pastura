@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EntidadAuditada;
+use App\Models\Traits\Auditable;
 use App\Support\Geo\Superficie;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Potrero extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'campo_id',
@@ -35,6 +37,43 @@ class Potrero extends Model
         return [
             'contorno' => 'array',
             'activo' => 'boolean',
+        ];
+    }
+
+    // ----- Auditoría (P18): contorno, tipo de pastura, baja ------------------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::Potrero;
+    }
+
+    /** El tipo cambia los kg MS/ha (P16) y el contorno, la superficie. */
+    protected function camposAuditados(): array
+    {
+        return ['tipo_pastura_id', 'contorno', 'activo'];
+    }
+
+    protected function auditaBaja(): bool
+    {
+        return true;
+    }
+
+    /** El tipo por su nombre; el contorno por su superficie (la geometría no se lee). */
+    protected function valorParaAuditoria(string $campo, mixed $valor): mixed
+    {
+        return match ($campo) {
+            'tipo_pastura_id' => TipoPastura::query()->find($valor)?->nombre,
+            'contorno' => ($ha = Superficie::hectareas(is_string($valor) ? json_decode($valor, true) : $valor)) === null ? null : round($ha, 2),
+            default => $this->valorAuditableComun($valor),
+        };
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        return [
+            'potrero' => Campo::query()->whereKey($this->campo_id)->value('nombre').' · '.$this->nombre,
+            'campo_id' => $this->campo_id,
         ];
     }
 

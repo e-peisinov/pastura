@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EntidadAuditada;
+use App\Models\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class TipoPastura extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'tipos_pastura';
 
@@ -39,6 +41,34 @@ class TipoPastura extends Model
             'biomasa_b' => 'float',
             'activo' => 'boolean',
         ];
+    }
+
+    // ----- Auditoría (P18): todo, porque cambia los kg y los estados ---------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::TipoPastura;
+    }
+
+    protected function camposAuditados(): array
+    {
+        return ['nombre', 'altura_ingreso_cm', 'altura_salida_cm', 'biomasa_a', 'biomasa_b', 'activo'];
+    }
+
+    protected function auditaAlta(): bool
+    {
+        return true;
+    }
+
+    protected function auditaBaja(): bool
+    {
+        return true;
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        return ['nombre' => $this->nombre];
     }
 
     public function potreros(): HasMany

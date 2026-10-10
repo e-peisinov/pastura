@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EntidadAuditada;
+use App\Models\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Medicion extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'mediciones';
 
@@ -63,6 +65,29 @@ class Medicion extends Model
     public function kgMsHaSegun(?TipoPastura $tipo): ?float
     {
         return $tipo?->kgMsHa((float) $this->altura_cm);
+    }
+
+    // ----- Auditoría (P18): descartar y restaurar ----------------------------
+
+    public static function entidadAuditada(): EntidadAuditada
+    {
+        return EntidadAuditada::Medicion;
+    }
+
+    protected function camposAuditados(): array
+    {
+        return ['activo'];
+    }
+
+    /** @return array<string, mixed> */
+    protected function datosAuditoria(): array
+    {
+        $recorrida = Recorrida::query()->find($this->recorrida_id);
+
+        return [
+            'hora' => $this->tomada_en?->format('H:i'),
+            'altura_cm' => $this->altura_cm,
+        ] + ($recorrida ? Recorrida::referenciaAuditoria($recorrida) : []);
     }
 
     public function recorrida(): BelongsTo

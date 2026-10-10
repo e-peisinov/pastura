@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PaseAlPanelController;
 use App\Livewire\Actions\Logout;
+use App\Livewire\Auditoria\Auditoria;
 use App\Livewire\Campos\Campos;
 use App\Livewire\Configuracion\Configuracion;
 use App\Livewire\Recorridas\Recorridas;
@@ -28,6 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('admin/usuarios', Usuarios::class)->name('admin.usuarios')->middleware('modulo:usuarios');
     // Configuración (P17): la organización, los tipos de pastura (P16) y los parámetros del seguimiento.
     Route::get('configuracion', Configuracion::class)->name('configuracion')->middleware('modulo:configuracion');
+    // Auditoría (P18): quién hizo lo sensible. Se lee con Ver.
+    Route::get('admin/auditoria', Auditoria::class)->name('admin.auditoria')->middleware('modulo:auditoria');
 });
 
 Route::middleware('auth')->group(function () {

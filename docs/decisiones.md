@@ -200,3 +200,18 @@ al construir el de P18:
 - **Para revisar mira los últimos 30 días**: no hay una marca de
   "revisada", así que sin ventana una recorrida vieja quedaría para
   siempre. Los puntos descartados no cuentan para ningún motivo.
+
+**P20 — 2026-10-10 — Cómo se audita.** El módulo 38 del kit, adaptado a lo
+de P18 y sin el tiempo real (acá no hay Reverb: la pantalla se lee al
+entrar). Cada modelo dice qué vigila: la recorrida, `activo` y
+`potrero_id` (no su alta ni lo que cambia la app al subir); el punto,
+`activo`; el potrero, `tipo_pastura_id` (cambia los kg, P16), `contorno`
+(se guarda la superficie, no la geometría) y `activo`, más su baja; el
+campo, `activo` y su baja; el tipo de pastura, todo, con su alta y su baja;
+la configuración, solo los parámetros (no la marca). El usuario: `rol` y
+`activo`; la **contraseña solo cuando la cambia otro** (la propia, en el
+perfil o por correo, no) y **nunca se guarda su valor**, ni cifrado; los
+**permisos** se comparan al guardar la matriz (`asignarNiveles`), módulo
+por módulo, y no cuentan en el alta de un usuario. Lo que llega por la API
+queda a nombre del dueño del token. La pantalla es de quien administra;
+con Ver alcanza.
