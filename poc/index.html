@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f5f3a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pasturómetro">
+  <title>Pasturómetro</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="barra">
+    <div class="barra-titulo">
+      <strong>Pasturómetro</strong>
+      <span id="potrero-actual" class="sub">Sin potrero</span>
+    </div>
+    <div class="chips">
+      <span id="chip-nivel" class="chip" hidden>Nivel –</span>
+      <span id="chip-gps" class="chip">GPS…</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Cámara: compartida por Medir y Calibrar -->
+    <section id="vista-camara" class="camara">
+      <canvas id="lienzo"></canvas>
+      <video id="video" playsinline muted autoplay></video>
+
+      <div id="camara-apagada" class="camara-apagada">
+        <p>Apuntá la cámara al disco desde la punta del caño.</p>
+        <button id="btn-camara" class="btn btn-primario">Activar cámara</button>
+        <label class="btn btn-secundario">
+          Probar con una foto
+          <input id="input-foto" type="file" accept="image/*" hidden>
+        </label>
+        <p id="error-camara" class="error" hidden></p>
+      </div>
+
+      <div id="hud" class="hud" hidden>
+        <div class="hud-lectura">
+          <span class="hud-etiqueta" id="hud-etiqueta">Altura del disco</span>
+          <span class="hud-valor"><span id="hud-valor">–</span> <small id="hud-unidad">cm</small></span>
+        </div>
+        <div class="hud-estado">
+          <span id="hud-marcadores" class="chip chip-oscuro">0/4</span>
+          <button id="btn-apagar" class="chip chip-oscuro chip-boton" aria-label="Apagar cámara">Apagar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEDIR -->
+    <section id="tab-medir" class="tab">
+      <div id="aviso-calibrar" class="aviso" hidden>
+        Falta calibrar. Andá a <button class="link" data-ir="calibrar">Calibrar</button> antes de medir.
+      </div>
+      <button id="btn-medir" class="btn btn-medir" disabled>
+        <span id="btn-medir-texto">Medir</span>
+        <span id="btn-medir-progreso" class="progreso"></span>
+      </button>
+      <div id="ultima" class="tarjeta" hidden></div>
+    </section>
+
+    <!-- CALIBRAR -->
+    <section id="tab-calibrar" class="tab" hidden>
+      <div class="tarjeta">
+        <h2>Calibración</h2>
+        <p class="ayuda">Apoyá el pasturómetro sobre piso duro y capturá con el disco en el piso (0&nbsp;cm). Después levantalo con tacos de altura conocida (por ejemplo 10, 20, 30 y 40&nbsp;cm) y capturá cada uno. Con 2 alturas alcanza; con 4 o 5 es mucho más preciso.</p>
+        <div class="fila">
+          <label class="campo">
+            <span>Altura conocida (cm)</span>
+            <input id="input-altura" type="number" inputmode="decimal" step="0.1" min="0" value="0">
+          </label>
+          <button id="btn-capturar" class="btn btn-primario" disabled>
+            <span id="btn-capturar-texto">Capturar</span>
+            <span id="btn-capturar-progreso" class="progreso"></span>
+          </button>
+        </div>
+        <table class="tabla" id="tabla-calib">
+          <thead><tr><th>Altura real</th><th>Estimada</th><th>Error</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p id="resumen-calib" class="resumen"></p>
+        <button id="btn-borrar-calib" class="btn btn-secundario btn-chico" hidden>Borrar calibración</button>
+      </div>
+    </section>
+
+    <!-- REGISTROS -->
+    <section id="tab-registros" class="tab" hidden>
+      <div class="tarjeta">
+        <label class="campo">
+          <span>Potrero</span>
+          <input id="input-potrero" type="text" placeholder="Ej.: Potrero 4" autocomplete="off">
+        </label>
+        <div class="kpis">
+          <div class="kpi"><span>Puntos</span><strong id="kpi-puntos">0</strong></div>
+          <div class="kpi"><span>Altura media</span><strong id="kpi-altura">–</strong></div>
+          <div class="kpi" id="kpi-kg-caja"><span>kg MS/ha</span><strong id="kpi-kg">–</strong></div>
+        </div>
+        <div class="fila">
+          <button id="btn-csv-potrero" class="btn btn-secundario">CSV del potrero</button>
+          <button id="btn-csv-todo" class="btn btn-secundario">CSV de todo</button>
+        </div>
+      </div>
+      <ul id="lista-mediciones" class="lista"></ul>
+    </section>
+
+    <!-- AJUSTES -->
+    <section id="tab-ajustes" class="tab" hidden>
+      <div class="tarjeta">
+        <h2>Equipo</h2>
+        <label class="campo">
+          <span>Largo del caño hasta la cámara (cm) <em>solo como control</em></span>
+          <input id="aj-cano" type="number" inputmode="decimal" step="0.1">
+        </label>
+        <label class="campo">
+          <span>Imágenes por medición</span>
+          <input id="aj-cuadros" type="number" inputmode="numeric" min="3" max="30">
+        </label>
+        <label class="campo">
+          <span>Resolución de la cámara</span>
+          <select id="aj-resolucion">
+            <option value="1920">Alta (1920 px), más precisa</option>
+            <option value="1280">Media (1280 px), más rápida</option>
+          </select>
+        </label>
+      </div>
+      <div class="tarjeta">
+        <h2>Biomasa <em>opcional</em></h2>
+        <p class="ayuda">kg MS/ha = A × altura (cm) + B. Dejalo vacío si no lo usás.</p>
+        <div class="fila">
+          <label class="campo"><span>A</span><input id="aj-bio-a" type="number" inputmode="decimal" step="any"></label>
+          <label class="campo"><span>B</span><input id="aj-bio-b" type="number" inputmode="decimal" step="any"></label>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <h2>Esta app</h2>
+        <p id="estado-offline" class="ayuda">Preparando uso sin conexión…</p>
+        <p id="ayuda-instalar" class="ayuda" hidden></p>
+        <button id="btn-instalar" class="btn btn-secundario" hidden>Instalar en el celular</button>
+        <p class="ayuda">Marcadores: ArUco 4×4, números 0 a 3.</p>
+        <button id="btn-borrar-todo" class="btn btn-peligro btn-chico">Borrar todos los datos</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <button data-tab="medir" class="activa">Medir</button>
+    <button data-tab="calibrar">Calibrar</button>
+    <button data-tab="registros">Registros</button>
+    <button data-tab="ajustes">Ajustes</button>
+  </nav>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="vendor/js-aruco2/cv.js"></script>
+  <script src="vendor/js-aruco2/aruco.js"></script>
+  <script src="vendor/js-aruco2/aruco_4x4_1000.js"></script>
+  <script src="js/vision-core.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/calibracion.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
