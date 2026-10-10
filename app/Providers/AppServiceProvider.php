@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\Panel\LivewireEnSubcarpeta;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
         // El ingreso de la app de campo (P10): 5 intentos por minuto por email e IP.
         RateLimiter::for('ingreso-app', fn (Request $request) => Limit::perMinute(5)
             ->by(mb_strtolower((string) $request->input('email')).'|'.$request->ip()));
+
+        // El panel también anda en una subcarpeta, como en XAMPP (P13).
+        LivewireEnSubcarpeta::registrar();
     }
 
     /**

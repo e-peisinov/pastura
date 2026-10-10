@@ -93,3 +93,13 @@ del panel de ese usuario, reemplazando la que hubiera en ese navegador, y
 lleva al tablero. Se descartó compartir una sola sesión entre las dos partes
 (P10: la app necesita un token que no venza sin señal). El panel suma
 "Abrir la app de campo" en el menú del usuario.
+
+**P13 — 2026-10-10 — El panel anda también en una subcarpeta.** En XAMPP el
+panel vive en `/pastura/public` y Livewire escribía la dirección de su script
+y la de sus pedidos desde la raíz (`/livewire/...`): no cargaba Livewire ni
+Alpine (menús, buscadores y formularios sin respuesta). Livewire no tiene una
+opción para eso (quita la subcarpeta a propósito), así que
+`App\Support\Panel\LivewireEnSubcarpeta` le pone la subcarpeta adelante a esas
+dos direcciones en la página que sale, solo cuando el pedido llega por una
+subcarpeta. En la raíz del dominio no hace nada. Si se actualiza Livewire,
+`SubcarpetaTest` avisa si cambió la forma de esas etiquetas.
