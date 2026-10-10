@@ -86,7 +86,8 @@ class PaseAlPanelTest extends TestCase
     {
         $url = $this->pedirEnlace();
 
-        $this->assertNoEntra(preg_replace('/signature=\w/', 'signature=0', $url));
+        // Se cambia el primer carácter de la firma por otro distinto (si ya era 0, por 1).
+        $this->assertNoEntra(preg_replace_callback('/signature=(\w)/', fn ($m) => 'signature='.($m[1] === '0' ? '1' : '0'), $url));
         // Ni cambiando el pase por otro: la firma cubre toda la dirección.
         $this->assertNoEntra(preg_replace('#entrar-desde-app/[^?]+#', 'entrar-desde-app/inventado', $url));
     }
