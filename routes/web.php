@@ -2,6 +2,7 @@
 
 use App\Livewire\Actions\Logout;
 use App\Livewire\Campos\Campos;
+use App\Livewire\Recorridas\Recorridas;
 use App\Livewire\Tablero\Tablero;
 use App\Livewire\Usuarios\Usuarios;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', Tablero::class)->name('dashboard')->middleware('modulo:tablero');
     // Campos y, desde su ficha, sus potreros con el contorno en el mapa (P5).
     Route::get('campos', Campos::class)->name('campos')->middleware('modulo:campos');
+    // Recorridas: el recorredor ve solo las suyas (dominio.md, regla 3); la ficha es un hijo.
+    Route::get('recorridas', Recorridas::class)->name('recorridas')->middleware('modulo:recorridas');
     // Usuarios (D49): alta, contraseña, baja lógica y la matriz de permisos de cada uno.
     Route::get('admin/usuarios', Usuarios::class)->name('admin.usuarios')->middleware('modulo:usuarios');
 });

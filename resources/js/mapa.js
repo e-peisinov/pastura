@@ -230,6 +230,7 @@ document.addEventListener('alpine:init', () => {
 
     Alpine.data('mapaVista', ({ potreros = [], puntos = [], escala = null }) => ({
         mapa: null,
+        referencia: referenciaAltura(escala),
 
         init() {
             this.$nextTick(() => {
@@ -272,6 +273,21 @@ document.addEventListener('alpine:init', () => {
  * `escala` = { min, max } de la recorrida; sin escala, de 0 a 30 cm.
  */
 export const COLORES_ALTURA = ['#f7fcb9', '#addd8e', '#78c679', '#31a354', '#006837'];
+
+/** Los tramos de la escala para la referencia del mapa: color y rango en cm ("10,0–11,6"). */
+export function referenciaAltura(escala) {
+    const min = escala?.min ?? 0;
+    const max = escala?.max ?? 30;
+    const cm = (v) => v.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (max <= min) {
+        return [{ color: colorAltura(min, escala), texto: cm(min) }];
+    }
+    const paso = (max - min) / COLORES_ALTURA.length;
+    return COLORES_ALTURA.map((color, i) => ({
+        color,
+        texto: `${cm(min + i * paso)}–${cm(min + (i + 1) * paso)}`,
+    }));
+}
 
 export function colorAltura(altura, escala) {
     const min = escala?.min ?? 0;

@@ -39,8 +39,9 @@ class UsuarioFormularioTest extends TestCase
             ->assertSeeHtml('data-matriz-permisos')
             ->assertSeeHtml('data-permiso="usuarios"')
             ->assertSeeHtml('data-permiso="tablero"')
-            // Los módulos sin ruta todavía no se muestran en la matriz.
-            ->assertDontSeeHtml('data-permiso="recorridas"')
+            // Recorridas ya tiene ruta: entra en la matriz, con Editar para el recorredor.
+            ->assertSeeHtml('data-permiso="recorridas"')
+            ->assertSet('permisos.recorridas', 'editar')
             ->set('rol', 'admin')
             ->assertSet('permisos.usuarios', 'editar')
             ->set('rol', 'recorredor')

@@ -73,9 +73,9 @@ class ModulosTest extends TestCase
         $this->assertSame('usuarios', Modulos::porNombre('usuarios')?->nombre);
         $this->assertSame('admin.usuarios', Modulos::porNombre('usuarios')->ruta);
 
-        // Recorridas todavía no tiene ruta: queda oculto.
+        // Los cuatro ya tienen ruta: el administrador los ve todos.
         $admin = User::factory()->admin()->create();
-        $this->assertSame(['tablero', 'campos', 'usuarios'], $this->nombres(Modulos::visibles($admin)));
+        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios'], $this->nombres(Modulos::visibles($admin)));
         $this->assertNull(Modulos::porNombre('inexistente'));
     }
 

@@ -79,11 +79,11 @@ class LayoutTest extends TestCase
     {
         $html = $this->dashboardComo(User::factory()->admin()->create());
 
-        // Recorridas está en la lista pero todavía sin ruta: no se muestra.
         $this->assertStringContainsString('data-modulo="tablero"', $html);
         $this->assertStringContainsString('data-modulo="campos"', $html);
+        $this->assertStringContainsString('data-modulo="recorridas"', $html);
         $this->assertStringContainsString('data-modulo="usuarios"', $html);
-        $this->assertStringNotContainsString('data-modulo="recorridas"', $html);
+        $this->assertMatchesRegularExpression('/data-modulo="recorridas"[^>]*data-tecla="r"/', $html);
     }
 
     public function test_cada_modulo_lleva_su_atajo_alt_letra_y_el_layout_lo_escucha(): void

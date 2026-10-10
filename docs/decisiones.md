@@ -37,3 +37,11 @@ ve solo las suyas.
 **P7 — 2026-10-10 — Configuración sin pantalla.** La marca blanca (nombre,
 logo, color) usa la tabla `configuracion` del kit, cargada por seeder. La
 pantalla de Configuración queda anunciada en el sidebar para más adelante.
+
+**P8 — 2026-10-10 — El CSV de recorridas va una fila por punto.** Sale en el
+formato del exportador del origen (UTF-8 con BOM, `;`, coma decimal) e incluye
+los puntos descartados y los de recorridas anuladas, marcados en la columna
+Estado: el CSV es el dato crudo y el filtro lo hace quien lo abre. Exportar,
+como descartar y anular, pide Editar en Recorridas y respeta la pertenencia.
+El período del listado admite "sin fecha" (atajo *Todo*), por eso no usa
+`FiltraPorPeriodo`, que cae siempre en hoy.
