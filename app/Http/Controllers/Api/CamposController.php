@@ -9,8 +9,9 @@ use Illuminate\Http\JsonResponse;
 
 /**
  * Lo que la app de campo baja para elegir dónde se mide: los campos activos
- * con sus potreros activos y el contorno (regla 4). Un campo sin potreros
- * activos no se manda, porque no hay nada que elegir.
+ * con sus potreros activos, el contorno y la fórmula de kg MS/ha de su tipo
+ * de pastura (regla 4, P16). Un campo sin potreros activos no se manda,
+ * porque no hay nada que elegir.
  */
 class CamposController extends Controller
 {
@@ -32,6 +33,10 @@ class CamposController extends Controller
                     'id' => $potrero->id,
                     'nombre' => $potrero->nombre,
                     'tipo_pastura' => $potrero->tipoPastura?->nombre,
+                    // kg MS/ha = max(0, a × altura + b), la fórmula vigente del tipo (P16).
+                    'formula_kg_ms_ha' => $potrero->tipoPastura?->tieneFormula()
+                        ? ['a' => $potrero->tipoPastura->biomasa_a, 'b' => $potrero->tipoPastura->biomasa_b]
+                        : null,
                     'superficie_ha' => ($ha = $potrero->superficieHa()) === null ? null : round($ha, 2),
                     'contorno' => $potrero->contorno,
                 ])->values(),

@@ -35,7 +35,7 @@ class RecorridasApiTest extends TestCase
         $this->juan = User::factory()->create(['name' => 'Juan Pérez']);
         $this->lote4 = Potrero::factory()->conContorno()
             ->for(Campo::factory()->create(['nombre' => 'La Esperanza', 'localidad' => 'Río Cuarto']))
-            ->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => TipoPastura::factory()->create(['nombre' => 'Alfalfa'])->id]);
+            ->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => TipoPastura::factory()->create(['nombre' => 'Alfalfa', 'biomasa_a' => 25.5, 'biomasa_b' => -100])->id]);
     }
 
     private function cuerpo(?array $mediciones = null, array $extra = []): array
@@ -81,6 +81,9 @@ class RecorridasApiTest extends TestCase
         $respuesta->assertJsonPath('campos.0.localidad', 'Río Cuarto')
             ->assertJsonPath('campos.0.potreros.1.id', $this->lote4->id)
             ->assertJsonPath('campos.0.potreros.1.tipo_pastura', 'Alfalfa')
+            // La fórmula de kg MS/ha la pone el panel (P16); sin tipo o sin fórmula, null.
+            ->assertJsonPath('campos.0.potreros.1.formula_kg_ms_ha', ['a' => 25.5, 'b' => -100])
+            ->assertJsonPath('campos.0.potreros.0.formula_kg_ms_ha', null)
             ->assertJsonPath('campos.0.potreros.1.contorno.type', 'Polygon')
             ->assertJsonPath('campos.0.potreros.0.contorno', null)
             ->assertJsonPath('campos.0.potreros.0.superficie_ha', null);

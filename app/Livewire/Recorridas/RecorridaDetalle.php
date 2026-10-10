@@ -120,11 +120,12 @@ class RecorridaDetalle extends Component
     {
         $recorrida = $this->recorrida()->load([
             'potrero.campo',
+            'potrero.tipoPastura',
             'user',
             'mediciones' => fn ($q) => $q->orderBy('tomada_en')->orderBy('id'),
         ]);
 
-        $resumen = ResumenRecorrida::de($recorrida->mediciones);
+        $resumen = ResumenRecorrida::de($recorrida->mediciones, $recorrida->potrero->tipoPastura);
 
         return view('livewire.recorridas.recorrida-detalle', [
             'recorrida' => $recorrida,
@@ -138,7 +139,7 @@ class RecorridaDetalle extends Component
      * Lo que recibe el componente Alpine mapaVista: el contorno del potrero y
      * los puntos con GPS, coloreados con la escala de los puntos activos.
      *
-     * @return array{potreros: list<array>, puntos: list<array>, escala: ?array}|null  null si ningún punto tiene ubicación
+     * @return array{potreros: list<array>, puntos: list<array>, escala: ?array}|null null si ningún punto tiene ubicación
      */
     private function datosMapa(Recorrida $recorrida, ResumenRecorrida $resumen): ?array
     {

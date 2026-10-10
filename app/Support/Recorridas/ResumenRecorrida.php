@@ -3,14 +3,16 @@
 namespace App\Support\Recorridas;
 
 use App\Models\Medicion;
+use App\Models\TipoPastura;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
  * El resumen de la ficha de una recorrida, calculado de sus mediciones
  * activas (dominio.md, regla 1; regla dura 8): cantidad de puntos, altura
- * media, mínima y máxima, kg MS/ha medio y la hora del primer y el último
- * punto. Trabaja sobre las mediciones ya cargadas, sin otra consulta.
+ * media, mínima y máxima, kg MS/ha medio (con la fórmula vigente del tipo
+ * de pastura, P16) y la hora del primer y el último punto. Trabaja sobre las
+ * mediciones ya cargadas, sin otra consulta.
  */
 final class ResumenRecorrida
 {
@@ -25,7 +27,7 @@ final class ResumenRecorrida
     ) {}
 
     /** @param  Collection<int, Medicion>  $mediciones */
-    public static function de(Collection $mediciones): self
+    public static function de(Collection $mediciones, ?TipoPastura $tipo): self
     {
         $activas = $mediciones->filter(fn (Medicion $m) => $m->activo);
 
@@ -34,7 +36,7 @@ final class ResumenRecorrida
         }
 
         $alturas = $activas->map(fn (Medicion $m) => (float) $m->altura_cm);
-        $kgs = $activas->pluck('kg_ms_ha')->filter(fn ($kg) => $kg !== null);
+        $kgs = $activas->map(fn (Medicion $m) => $m->kgMsHaSegun($tipo))->filter(fn (?float $kg) => $kg !== null);
         $horas = $activas->pluck('tomada_en')->sort()->values();
 
         return new self(

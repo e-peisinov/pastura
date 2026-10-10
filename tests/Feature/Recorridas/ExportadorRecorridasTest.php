@@ -6,6 +6,7 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\TipoPastura;
 use App\Models\User;
 use App\Support\Recorridas\ExportadorRecorridas;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,9 @@ class ExportadorRecorridasTest extends TestCase
 
     public function test_una_fila_por_punto_con_coma_decimal_y_su_estado(): void
     {
-        $potrero = Potrero::factory()->for(Campo::factory()->create(['nombre' => 'La Esperanza']))->create(['nombre' => 'Lote 4']);
+        // kg con la fórmula vigente del tipo (P16): 150 × 12,5 + 300 = 2175 (el celular mandó 2150); 150 × 40 + 300 = 6300.
+        $tipo = TipoPastura::factory()->create(['biomasa_a' => 150, 'biomasa_b' => 300]);
+        $potrero = Potrero::factory()->for(Campo::factory()->create(['nombre' => 'La Esperanza']))->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => $tipo->id]);
         $recorredor = User::factory()->create(['name' => 'Juan Pérez']);
         $recorrida = Recorrida::factory()->for($potrero)->for($recorredor)->create(['iniciada_en' => '2026-10-05 08:00:00']);
 
@@ -48,8 +51,8 @@ class ExportadorRecorridasTest extends TestCase
         $this->assertStringStartsWith('Fecha;Hora;Campo;Potrero;Recorredor;"Altura (cm)"', $lineas[0]);
 
         // Ordenadas por hora dentro de la recorrida: primero el descartado.
-        $this->assertSame("05/10/2026;08:05;\"La Esperanza\";\"Lote 4\";\"Juan Pérez\";40,0;;;;;;;10;;Descartado;{$recorrida->id}", $lineas[1]);
-        $this->assertSame("05/10/2026;08:12;\"La Esperanza\";\"Lote 4\";\"Juan Pérez\";12,5;107,5;2150;-33,1234567;-64,3456789;4,2;3,1;10;0,35;Válido;{$recorrida->id}", $lineas[2]);
+        $this->assertSame("05/10/2026;08:05;\"La Esperanza\";\"Lote 4\";\"Juan Pérez\";40,0;;6300;;;;;10;;Descartado;{$recorrida->id}", $lineas[1]);
+        $this->assertSame("05/10/2026;08:12;\"La Esperanza\";\"Lote 4\";\"Juan Pérez\";12,5;107,5;2175;-33,1234567;-64,3456789;4,2;3,1;10;0,35;Válido;{$recorrida->id}", $lineas[2]);
     }
 
     public function test_los_puntos_de_una_recorrida_anulada_salen_marcados(): void

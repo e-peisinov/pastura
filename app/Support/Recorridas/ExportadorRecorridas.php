@@ -33,7 +33,7 @@ final class ExportadorRecorridas
         fputcsv($salida, self::columnas(), self::SEPARADOR, '"', '\\', "\r\n");
 
         $recorridas = $consulta->clone()
-            ->with(['potrero.campo', 'user', 'mediciones' => fn ($q) => $q->orderBy('tomada_en')->orderBy('id')])
+            ->with(['potrero.campo', 'potrero.tipoPastura', 'user', 'mediciones' => fn ($q) => $q->orderBy('tomada_en')->orderBy('id')])
             ->reorder()
             ->orderBy('recorridas.iniciada_en')
             ->orderBy('recorridas.id')
@@ -88,7 +88,8 @@ final class ExportadorRecorridas
             $recorrida->user->name,
             self::numero($medicion->altura_cm, 1),
             self::numero($medicion->distancia_cm, 1),
-            self::numero($medicion->kg_ms_ha, 0),
+            // Con la fórmula vigente del tipo de pastura (P16), como en la pantalla.
+            self::numero($medicion->kgMsHaSegun($recorrida->potrero->tipoPastura), 0),
             self::numero($medicion->latitud, 7),
             self::numero($medicion->longitud, 7),
             self::numero($medicion->precision_m, 1),

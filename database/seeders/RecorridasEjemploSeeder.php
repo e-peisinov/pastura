@@ -99,7 +99,8 @@ class RecorridasEjemploSeeder extends Seeder
                         'tomada_en' => $momento,
                         'altura_cm' => round($altura, 1),
                         'distancia_cm' => round(118 - $altura, 1),
-                        // Fórmula de ejemplo: kg MS/ha = 105 × altura + 600.
+                        // Lo que habría visto el celular (kg MS/ha = 105 × altura + 600); el panel
+                        // muestra los que salen de la fórmula del tipo de pastura (P16).
                         'kg_ms_ha' => $conKg ? (int) round(105 * $altura + 600) : null,
                         'latitud' => $sinGps ? null : round($lat, 7),
                         'longitud' => $sinGps ? null : round($lon, 7),

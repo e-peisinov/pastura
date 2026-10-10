@@ -3,6 +3,7 @@
 namespace Tests\Unit\Support;
 
 use App\Models\Medicion;
+use App\Models\TipoPastura;
 use App\Support\Recorridas\ResumenRecorrida;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -25,8 +26,9 @@ class ResumenRecorridaTest extends TestCase
 
     /**
      * Activos: 10, 12,5 y 14 cm → media 36,5 / 3 = 12,17; rango 10–14.
-     * kg: 1800 y 2400 (uno sin kg) → 2100. El descartado (40 cm, 07:50) no
-     * cuenta en nada, tampoco en el horario.
+     * kg con 150 × h + 300 (P16): 1800, 2175 y 2400 → 2125; lo que mandó el
+     * celular no cuenta. El descartado (40 cm, 07:50) no cuenta en nada,
+     * tampoco en el horario.
      */
     public function test_resume_solo_los_puntos_activos(): void
     {
@@ -35,20 +37,20 @@ class ResumenRecorridaTest extends TestCase
             $this->punto(12.5, null, '08:10'),
             $this->punto(10, 1800, '08:05'),
             $this->punto(14, 2400, '08:42'),
-        ]));
+        ]), new TipoPastura(['biomasa_a' => 150, 'biomasa_b' => 300]));
 
         $this->assertSame(3, $resumen->puntos);
         $this->assertEqualsWithDelta(12.1667, $resumen->alturaMedia, 0.0001);
         $this->assertSame(10.0, $resumen->alturaMinima);
         $this->assertSame(14.0, $resumen->alturaMaxima);
-        $this->assertSame(2100.0, $resumen->kgMedio);
+        $this->assertSame(2125.0, $resumen->kgMedio);
         $this->assertSame('08:05', $resumen->primera->format('H:i'));
         $this->assertSame('08:42', $resumen->ultima->format('H:i'));
     }
 
     public function test_sin_puntos_activos_no_hay_promedios(): void
     {
-        $resumen = ResumenRecorrida::de(collect([$this->punto(20, 3000, '09:00', activo: false)]));
+        $resumen = ResumenRecorrida::de(collect([$this->punto(20, 3000, '09:00', activo: false)]), new TipoPastura(['biomasa_a' => 150, 'biomasa_b' => 300]));
 
         $this->assertSame(0, $resumen->puntos);
         $this->assertNull($resumen->alturaMedia);
@@ -59,11 +61,12 @@ class ResumenRecorridaTest extends TestCase
         $this->assertNull($resumen->ultima);
     }
 
-    public function test_sin_kg_cargados_el_kg_medio_queda_vacio(): void
+    public function test_sin_tipo_o_sin_formula_el_kg_medio_queda_vacio(): void
     {
-        $resumen = ResumenRecorrida::de(collect([$this->punto(8, null, '10:00'), $this->punto(9, null, '10:01')]));
+        $puntos = collect([$this->punto(8, 1500, '10:00'), $this->punto(9, 1600, '10:01')]);
 
-        $this->assertSame(8.5, $resumen->alturaMedia);
-        $this->assertNull($resumen->kgMedio);
+        $this->assertSame(8.5, ResumenRecorrida::de($puntos, null)->alturaMedia);
+        $this->assertNull(ResumenRecorrida::de($puntos, null)->kgMedio);
+        $this->assertNull(ResumenRecorrida::de($puntos, new TipoPastura(['nombre' => 'Sorgo']))->kgMedio);
     }
 }

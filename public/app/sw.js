@@ -2,7 +2,7 @@
  * Service worker: guarda la app completa en el celular para que abra y
  * funcione sin conexión. Al cambiar cualquier archivo, subir VERSION.
  */
-const VERSION = 'app-7';
+const VERSION = 'app-8';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -13,6 +13,7 @@ const ARCHIVOS = [
   'js/api.js',
   'js/sincronizacion.js',
   'js/calibracion.js',
+  'js/biomasa.js',
   'js/sin-senal.js',
   'js/vision-core.js',
   'js/vision-worker.js',

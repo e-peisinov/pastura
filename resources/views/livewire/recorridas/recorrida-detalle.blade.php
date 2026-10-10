@@ -22,7 +22,7 @@
         'activo' => $m->activo,
         'hora' => $m->tomada_en->format('H:i:s'),
         'altura' => $cm($m->altura_cm),
-        'kg' => $m->kg_ms_ha === null ? $sinDato : Formato::numero($m->kg_ms_ha),
+        'kg' => ($kg = $m->kgMsHaSegun($potrero->tipoPastura)) === null ? $sinDato : Formato::numero($kg),
         'gps' => $m->tieneUbicacion()
             ? ($m->precision_m === null ? __('recorridas.detalle.con_gps') : __('recorridas.detalle.gps', ['valor' => Formato::numero($m->precision_m, 1)]))
             : __('recorridas.detalle.sin_gps'),

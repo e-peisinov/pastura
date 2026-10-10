@@ -56,6 +56,15 @@ class Medicion extends Model
         ];
     }
 
+    /**
+     * Los kg MS/ha de este punto con la fórmula vigente del tipo de pastura
+     * (P16). `kg_ms_ha` es otra cosa: lo que vio el recorredor en el celular.
+     */
+    public function kgMsHaSegun(?TipoPastura $tipo): ?float
+    {
+        return $tipo?->kgMsHa((float) $this->altura_cm);
+    }
+
     public function recorrida(): BelongsTo
     {
         return $this->belongsTo(Recorrida::class);

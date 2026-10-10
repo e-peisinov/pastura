@@ -12,7 +12,7 @@
   const nf0 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
   const nf4 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 
-  const AJUSTES_DEFECTO = { canoCm: 120, cuadros: 10, resolucion: 1920, bioA: null, bioB: null };
+  const AJUSTES_DEFECTO = { canoCm: 120, cuadros: 10, resolucion: 1920 };
   const IDS = [0, 1, 2, 3];
   const GPS_VIEJO_MS = 60000;
   const CAPTURA_MAX_MS = 8000;
@@ -72,11 +72,9 @@
 
   const numero = v => (v === '' || v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v));
 
-  function kgMsHa(alturaCm) {
-    const { bioA, bioB } = estado.ajustes;
-    if (bioA === null || bioB === null) return null;
-    return Math.max(0, bioA * alturaCm + bioB);
-  }
+  // La fórmula la pone el panel por tipo de pastura y llega con el catálogo (P16).
+  const formulaDe = potreroId => Biomasa.formulaDe(estado.catalogo, potreroId);
+  const kgMsHa = (alturaCm, potreroId) => Biomasa.kgMsHa(alturaCm, formulaDe(potreroId));
 
   // Botón de dos toques para acciones destructivas (sin diálogos del navegador).
   function dosToques(boton, textoConfirmar, accion) {
@@ -365,7 +363,7 @@
       creado: Date.now(),
       alturaCm,
       distanciaCm: Calibracion.distancia(estado.cal, r.tam),
-      kgMsHa: kgMsHa(alturaCm),
+      kgMsHa: kgMsHa(alturaCm, recorrida.potreroId),
       tamPx: r.tam,
       dispersionCm: 1.4826 * r.mad * Calibracion.cmPorPixel(estado.cal, r.tam),
       imagenes: r.validos,
@@ -610,7 +608,7 @@
     const media = lista.length ? lista.reduce((s, m) => s + m.alturaCm, 0) / lista.length : null;
     $('#kpi-altura').textContent = media === null ? '–' : `${nf1.format(media)} cm`;
     const conKg = lista.filter(m => m.kgMsHa !== null);
-    $('#kpi-kg-caja').hidden = estado.ajustes.bioA === null && !conKg.length;
+    $('#kpi-kg-caja').hidden = !conKg.length && !(r && formulaDe(r.potreroId));
     $('#kpi-kg').textContent = conKg.length ? nf0.format(conKg.reduce((s, m) => s + m.kgMsHa, 0) / conKg.length) : '–';
 
     const ul = $('#lista-mediciones');
@@ -665,8 +663,6 @@
     $('#aj-cano').value = a.canoCm ?? '';
     $('#aj-cuadros').value = a.cuadros;
     $('#aj-resolucion').value = String(a.resolucion);
-    $('#aj-bio-a').value = a.bioA ?? '';
-    $('#aj-bio-b').value = a.bioB ?? '';
   }
 
   async function guardarAjustes() {
@@ -674,8 +670,6 @@
     a.canoCm = numero($('#aj-cano').value);
     a.cuadros = Math.max(3, Math.min(30, numero($('#aj-cuadros').value) || AJUSTES_DEFECTO.cuadros));
     a.resolucion = Number($('#aj-resolucion').value);
-    a.bioA = numero($('#aj-bio-a').value);
-    a.bioB = numero($('#aj-bio-b').value);
     await DB.guardar('ajustes', a);
     pintarCalibracion();
     pintarRegistros();
@@ -1230,7 +1224,7 @@
     });
     $('#btn-csv-todo').addEventListener('click', () => exportar([...estado.mediciones], 'mediciones-todas'));
 
-    ['#aj-cano', '#aj-cuadros', '#aj-resolucion', '#aj-bio-a', '#aj-bio-b'].forEach(s => $(s).addEventListener('change', guardarAjustes));
+    ['#aj-cano', '#aj-cuadros', '#aj-resolucion'].forEach(s => $(s).addEventListener('change', guardarAjustes));
     dosToques($('#btn-borrar-todo'), '¿Seguro? Se borra todo, también lo que no se subió. Tocá de nuevo', async () => {
       await DB.borrarTodo();
       location.reload();

@@ -97,7 +97,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | `tomada_en` | datetime | |
 | `altura_cm` | decimal(5,1) | Altura del disco (Y). |
 | `distancia_cm` | decimal(5,1), null | Cámara–disco (Z). |
-| `kg_ms_ha` | unsigned int, null | Biomasa estimada por la app, si tiene la fórmula cargada. |
+| `kg_ms_ha` | unsigned int, null | Lo que vio el recorredor en el celular. El panel no lo usa: calcula los kg MS/ha con la fórmula vigente del tipo de pastura (P16). |
 | `latitud`, `longitud` | decimal(10,7), null | WGS84. Null si no había GPS. |
 | `precision_m` | decimal(6,1), null | Precisión que informó el GPS. |
 | `inclinacion_grados` | decimal(4,1), null | |
@@ -140,5 +140,5 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | API de sincronización + login en la app de campo (P9 a P11) | Hecha |
 | Inicio de la app: hacer una recorrida o ir al panel sin volver a ingresar (P12) | Hecha |
 | Configuración: organización, tipos de pastura, parámetros (P16, P17) | Hecha |
-| kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Más adelante |
+| kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Hecha |
 | Reportes, auditoría (P18) | Más adelante |

@@ -10,6 +10,7 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -48,12 +49,17 @@ class RecorridaDetalleTest extends TestCase
 
         $potrero = Potrero::factory()
             ->for(Campo::factory()->create(['nombre' => 'La Esperanza']))
-            ->create(['nombre' => 'Lote 4', 'contorno' => self::CUADRADO]);
+            ->create([
+                'nombre' => 'Lote 4', 'contorno' => self::CUADRADO,
+                'tipo_pastura_id' => TipoPastura::factory()->create(['biomasa_a' => 150, 'biomasa_b' => 300])->id,
+            ]);
 
         $this->recorrida = Recorrida::factory()->for($potrero)->for($this->juan)
             ->create(['iniciada_en' => '2026-10-05 08:00:00', 'dispositivo' => 'iPhone 13']);
 
-        // Activos: 10, 12,5 y 14 cm → media 12,2; rango 10,0–14,0; kg (1800 + 2400) / 2 = 2100.
+        // Activos: 10, 12,5 y 14 cm → media 12,2; rango 10,0–14,0. Los kg salen de
+        // la fórmula 150 × h + 300 (P16), no de lo que mandó el celular:
+        // 1800, 2175 y 2400 → 2125.
         $this->puntos = [
             $this->punto('08:05:10', 10, 1800, ['precision_m' => 4.2, 'imagenes' => 10, 'dispersion_cm' => 0.35]),
             $this->punto('08:10:00', 12.5, null),
@@ -85,7 +91,7 @@ class RecorridaDetalleTest extends TestCase
                 'Puntos', '3',
                 'Altura media', '12,2 cm',
                 'Mínima – máxima', '10,0 – 14,0 cm',
-                'kg MS/ha medio', '2.100',
+                'kg MS/ha medio', '2.125',
                 'Horario', '08:05 – 08:42',
                 'Recorredor', 'Juan Pérez',
                 'Dispositivo', 'iPhone 13',
@@ -95,7 +101,7 @@ class RecorridaDetalleTest extends TestCase
     public function test_la_tabla_de_puntos_muestra_hora_altura_kg_gps_y_lectura(): void
     {
         $this->ficha($this->admin)
-            ->assertSeeInOrder(['08:05:10', '10,0 cm', '1.800', '±4,2 m', '10 imágenes · ±0,35 cm'])
+            ->assertSeeInOrder(['08:05:10', '10,0 cm', '1.800', '±4,2 m', '10 imágenes · ±0,35 cm', '08:10:00', '12,5 cm', '2.175'])
             ->assertSeeHtml('data-punto="'.$this->puntos[3]->id.'"')
             ->assertSee('Descartado');
     }
