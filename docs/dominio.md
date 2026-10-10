@@ -134,7 +134,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 |---|---|
 | Piezas de UI del kit (10 → 18), layout, acceso | Hecha |
 | Usuarios y permisos | Hecha |
-| Inicio (tablero) | En curso |
+| Inicio (tablero): estado de los potreros, para medir, últimas recorridas, para revisar (P18) | Hecha |
 | Campos y potreros (ABM, contorno en el mapa, importar KML/KMZ) | Hecha |
 | Recorridas (listado, detalle con mapa de puntos, anular, descartar puntos, CSV) | Hecha |
 | API de sincronización + login en la app de campo (P9 a P11) | Hecha |

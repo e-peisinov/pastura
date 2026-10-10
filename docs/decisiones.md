@@ -186,3 +186,17 @@ con el usuario antes de construirlos:
   ni las subidas: es ruido para lo que cuenta.
 - **Orden**: Configuración → kg MS/ha calculados en el panel (API y app) →
   Tablero → Auditoría → Reportes, un commit por etapa.
+
+**P19 — 2026-10-10 — Cómo se arma el tablero.** Detalles que se resolvieron
+al construir el de P18:
+- **Potreros para medir es un bloque aparte** del estado de los potreros:
+  la acción es otra (salir a medir, no pastorear) y lo ven los dos roles.
+- La referencia de un potrero es su **última recorrida activa con al menos
+  un punto activo**: una anulada o con todo descartado no dice la altura.
+  Un potrero sin medir sigue mostrando su último estado, con los días.
+- **Bordes**: listo desde la altura de ingreso justa; bajo el remanente
+  solo por debajo de la de salida (la de salida justa está en crecimiento);
+  sin medir con **más** días que los de Configuración.
+- **Para revisar mira los últimos 30 días**: no hay una marca de
+  "revisada", así que sin ventana una recorrida vieja quedaría para
+  siempre. Los puntos descartados no cuentan para ningún motivo.
