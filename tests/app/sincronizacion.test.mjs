@@ -284,6 +284,49 @@ test('forzar reintenta también una rechazada', async () => {
   assert.equal(r.error, null);
 });
 
+// ----- cambiar el potrero de una rechazada ---------------------------------
+
+const campoNuevo = { id: 7, nombre: 'La Esperanza' };
+const potreroNuevo = { id: 12, nombre: 'Lote 4' };
+
+test('cambiar el potrero deja la recorrida pendiente, con otra versión y sin el error', () => {
+  const original = recorrida({ sync: 'rechazada', error: 'El potrero está dado de baja.', rev: 3, revSubida: 2, intentos: 2, proximo: T0 + 60000 });
+
+  const r = plano(Sincro.cambiarPotrero(original, campoNuevo, potreroNuevo));
+
+  assert.equal(r.campoId, 7);
+  assert.equal(r.campoNombre, 'La Esperanza');
+  assert.equal(r.potreroId, 12);
+  assert.equal(r.potreroNombre, 'Lote 4');
+  assert.equal(r.rev, 4);
+  assert.equal(r.revSubida, 2);
+  assert.equal(r.sync, 'pendiente');
+  assert.equal(r.error, null);
+  assert.equal(r.intentos, 0);
+  assert.equal(r.proximo, 0);
+  assert.equal(r.uuid, original.uuid, 'es la misma recorrida: el panel la actualiza, no crea otra');
+  assert.equal(original.potreroId, 3, 'no modifica la recorrida que recibe');
+});
+
+test('después de cambiar el potrero la cola la sube sola, con el potrero nuevo', async () => {
+  const rechazada = recorrida({ sync: 'rechazada', error: 'El potrero está dado de baja.' });
+  const a = almacen([Sincro.cambiarPotrero(rechazada, campoNuevo, potreroNuevo)], [medicion('a1')]);
+  const servidor = api({});
+
+  const resultado = await Sincro.crearCola({ almacen: a, api: servidor, ahora: () => T0 }).procesar(2);
+
+  assert.equal(resultado.subidas, 1);
+  assert.equal(servidor.pedidos[0].cuerpo.potrero_id, 12);
+  assert.equal(a.r.get(rechazada.uuid).sync, 'sincronizada');
+});
+
+test('solo se puede cambiar el potrero de una recorrida rechazada', () => {
+  assert.equal(Sincro.puedeCambiarPotrero(recorrida({ sync: 'rechazada' })), true);
+  for (const sync of ['nueva', 'pendiente', 'sincronizada']) {
+    assert.equal(Sincro.puedeCambiarPotrero(recorrida({ sync })), false, sync);
+  }
+});
+
 test('un punto que se agrega mientras se sube deja la recorrida pendiente', async () => {
   const a = almacen([recorrida()], [medicion('a1')]);
   const servidor = {

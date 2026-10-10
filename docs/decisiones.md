@@ -75,4 +75,6 @@ mediciones que no vienen en el pedido **se conservan**: la app puede subir en
 partes y un celular que pierde datos no borra nada en el panel. La API nunca
 toca `activo`: lo que se anuló o descartó en el panel sigue así aunque la app
 lo vuelva a subir. Las fechas llegan en ISO 8601 con zona y se guardan en la
-hora del servidor.
+hora del servidor. Si el panel rechaza una recorrida, la app deja cambiarle
+el potrero (misma recorrida, nueva versión) y la vuelve a subir; el panel la
+mueve de potrero con todas sus mediciones.

@@ -152,6 +152,26 @@
       <div class="tarjeta">
         <h2 id="reg-titulo">Sin recorridas</h2>
         <p id="reg-estado" class="sub"></p>
+        <div id="cambio-potrero" class="cambio-potrero" hidden>
+          <p id="cp-motivo" class="error-sync"></p>
+          <button id="btn-cambiar-potrero" class="btn btn-secundario btn-chico">Cambiar potrero</button>
+          <div id="cp-formulario" hidden>
+            <p class="ayuda">La recorrida pasa al potrero que elijas y se sube con todos sus puntos.</p>
+            <label class="campo">
+              <span>Campo</span>
+              <select id="cp-campo"></select>
+            </label>
+            <label class="campo">
+              <span>Potrero</span>
+              <select id="cp-potrero"></select>
+            </label>
+            <p id="cp-ayuda" class="ayuda" hidden></p>
+            <div class="fila">
+              <button id="btn-cp-guardar" class="btn btn-primario">Cambiar y subir</button>
+              <button id="btn-cp-cancelar" class="btn btn-secundario">Cancelar</button>
+            </div>
+          </div>
+        </div>
         <div class="kpis">
           <div class="kpi"><span>Puntos</span><strong id="kpi-puntos">0</strong></div>
           <div class="kpi"><span>Altura media</span><strong id="kpi-altura">–</strong></div>

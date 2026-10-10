@@ -190,6 +190,9 @@ td.mal, .resumen.mal { color: var(--mal); }
 .lista-recorridas li.elegida { border-color: var(--acento); box-shadow: inset 3px 0 0 var(--acento); }
 .lista-recorridas .chip { flex-shrink: 0; }
 .error-sync { color: var(--mal); font-size: .85rem; display: block; }
+.cambio-potrero { border: 1px solid var(--mal); border-radius: 12px; padding: .7rem; margin: .75rem 0; }
+.cambio-potrero > p:first-child { margin: 0 0 .6rem; }
+#cp-formulario { margin-top: .75rem; }
 
 /* ---------- ingreso ---------- */
 .pantalla-ingreso {

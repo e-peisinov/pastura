@@ -63,7 +63,9 @@ Se puede repetir sin duplicar nada (P4). *En el código:* `SincronizadorRecorrid
 
 **Cola de subida** — Las recorridas guardadas en el celular que el panel
 todavía no tiene en su última versión. Cada una está **pendiente**, **en el
-panel** o **rechazada** (el panel no la aceptó y dice por qué).
+panel** o **rechazada** (el panel no la aceptó y dice por qué). A una rechazada se le
+puede **cambiar el potrero** desde la app: es la misma recorrida, que vuelve
+a la cola y el panel actualiza por su uuid.
 
 **Ingreso** — Entrar a la app con el usuario y la contraseña del panel. Deja
 un **token** guardado en el celular para subir sin volver a escribir la

@@ -30,6 +30,7 @@
     catalogo: null,        // { generado_en, campos: [{ id, nombre, potreros: [...] }] }
     recorridas: [],
     vista: null,           // uuid de la recorrida que muestra Registros, o 'anteriores'
+    cambioPotrero: null,   // uuid de la rechazada a la que se le está cambiando el potrero
     tab: 'medir',
     fuente: null,          // 'camara' | 'foto' | null
     stream: null,
@@ -584,7 +585,7 @@
     let texto;
     if (estado.sesionVencida) texto = 'La sesión venció: ingresá de nuevo para subir.';
     else if (!navigator.onLine && pendientes) texto = `Sin señal: ${pendientes} ${pendientes === 1 ? 'recorrida espera' : 'recorridas esperan'} para subir.`;
-    else if (rechazadas) texto = `${rechazadas} ${rechazadas === 1 ? 'recorrida rechazada' : 'recorridas rechazadas'} por el panel. Revisá el motivo y tocá Subir ahora para reintentar.`;
+    else if (rechazadas) texto = `${rechazadas} ${rechazadas === 1 ? 'recorrida rechazada' : 'recorridas rechazadas'} por el panel. Revisá el motivo: podés cambiarle el potrero o tocar Subir ahora para reintentar.`;
     else if (pendientes) texto = `${pendientes} ${pendientes === 1 ? 'recorrida pendiente' : 'recorridas pendientes'} de subir.`;
     else texto = mias.length ? 'Todo está en el panel.' : '';
     $('#estado-sync').textContent = texto;
@@ -600,6 +601,7 @@
     const r = estado.recorridas.find(x => x.uuid === vista);
     $('#reg-titulo').textContent = r ? `${r.potreroNombre} · ${r.campoNombre}` : vista === 'anteriores' ? 'Anteriores a las recorridas' : 'Sin recorridas';
     $('#reg-estado').textContent = r ? `${fechaHora(r.iniciada)}${r.terminada ? ` a ${hora(r.terminada)}` : ' · en curso'}` : '';
+    pintarCambioPotrero(r);
     $('#btn-csv-recorrida').disabled = !vista;
 
     const lista = vista ? medicionesDe(vista) : [];
@@ -816,10 +818,14 @@
     $('#btn-empezar').disabled = !campos.length;
   }
 
-  function pintarPotreros(preferido) {
-    const campo = (estado.catalogo ? estado.catalogo.campos : []).find(c => c.id === Number($('#sel-campo').value));
+  function campoElegido(selCampo = '#sel-campo') {
+    return (estado.catalogo ? estado.catalogo.campos : []).find(c => c.id === Number($(selCampo).value));
+  }
+
+  function pintarPotreros(preferido, selCampo = '#sel-campo', selPotrero = '#sel-potrero') {
+    const campo = campoElegido(selCampo);
     const potreros = campo ? campo.potreros : [];
-    const sel = $('#sel-potrero');
+    const sel = $(selPotrero);
     sel.innerHTML = potreros.map(p => {
       const extra = [p.tipo_pastura, p.superficie_ha !== null ? `${nf1.format(p.superficie_ha)} ha` : null].filter(Boolean).join(' · ');
       return `<option value="${p.id}">${esc(p.nombre)}${extra ? ` (${esc(extra)})` : ''}</option>`;
@@ -835,7 +841,7 @@
   }
 
   async function empezarRecorrida() {
-    const campo = (estado.catalogo ? estado.catalogo.campos : []).find(c => c.id === Number($('#sel-campo').value));
+    const campo = campoElegido();
     const potrero = campo && campo.potreros.find(p => p.id === Number($('#sel-potrero').value));
     if (!potrero || !estado.sesion || recorridaAbierta()) { toast('Elegí el campo y el potrero', 'mal'); return; }
     const u = estado.sesion.usuario;
@@ -892,6 +898,64 @@
     await DB.guardarRecorrida(r);
     estado.recorridas = estado.recorridas.map(x => (x.uuid === r.uuid ? r : x));
     actualizarBotones();
+  }
+
+  /* ================= cambiar el potrero de una rechazada ================= */
+
+  function puedoCambiarPotrero(r) {
+    const u = estado.sesion && estado.sesion.usuario;
+    return !!r && !!u && r.usuarioId === u.id && Sincro.puedeCambiarPotrero(r);
+  }
+
+  function pintarCambioPotrero(r) {
+    const visible = puedoCambiarPotrero(r);
+    $('#cambio-potrero').hidden = !visible;
+    if (!visible) { estado.cambioPotrero = null; return; }
+    $('#cp-motivo').textContent = r.error || 'El panel rechazó esta recorrida.';
+    const abierto = estado.cambioPotrero === r.uuid;
+    $('#btn-cambiar-potrero').hidden = abierto;
+    $('#cp-formulario').hidden = !abierto;
+  }
+
+  function pintarSelectoresCambio(r) {
+    const campos = estado.catalogo ? estado.catalogo.campos : [];
+    const selCampo = $('#cp-campo');
+    selCampo.innerHTML = campos.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+    if (campos.some(c => c.id === r.campoId)) selCampo.value = String(r.campoId);
+    pintarPotreros(r.potreroId, '#cp-campo', '#cp-potrero');
+    $('#cp-ayuda').hidden = campos.length > 0;
+    $('#cp-ayuda').textContent = 'No hay campos con potreros activos: conectate y tocá Actualizar campos en Medir.';
+    $('#btn-cp-guardar').disabled = !campos.length;
+  }
+
+  async function abrirCambioPotrero() {
+    const r = estado.recorridas.find(x => x.uuid === vistaVigente());
+    if (!puedoCambiarPotrero(r)) return;
+    estado.cambioPotrero = r.uuid;
+    pintarSelectoresCambio(r);
+    pintarCambioPotrero(r);
+    // La lista guardada puede traer el potrero que se dio de baja: se baja de nuevo si hay señal.
+    if (navigator.onLine) {
+      await cargarCatalogo();
+      if (estado.cambioPotrero === r.uuid) pintarSelectoresCambio(r);
+    }
+  }
+
+  async function guardarCambioPotrero() {
+    const campo = campoElegido('#cp-campo');
+    const potrero = campo && campo.potreros.find(p => p.id === Number($('#cp-potrero').value));
+    const guardada = estado.cambioPotrero && await DB.recorrida(estado.cambioPotrero);
+    if (!potrero) { toast('Elegí el campo y el potrero', 'mal'); return; }
+    if (!guardada || !puedoCambiarPotrero(guardada)) { estado.cambioPotrero = null; pintarRegistros(); return; }
+
+    const r = Sincro.cambiarPotrero(guardada, campo, potrero);
+    await DB.guardarRecorrida(r);
+    estado.recorridas = estado.recorridas.map(x => (x.uuid === r.uuid ? r : x));
+    estado.cambioPotrero = null;
+    actualizarBotones();
+    pintarRegistros();
+    toast(`Recorrida pasada a ${potrero.nombre}`);
+    sincronizar({ forzar: true });
   }
 
   /* ================= sincronización (P11) ================= */
@@ -1021,6 +1085,10 @@
     dosToques($('#btn-terminar'), '¿Terminar?', terminarRecorrida);
 
     $('#btn-subir').addEventListener('click', () => sincronizar({ forzar: true }));
+    $('#btn-cambiar-potrero').addEventListener('click', abrirCambioPotrero);
+    $('#cp-campo').addEventListener('change', () => pintarPotreros(null, '#cp-campo', '#cp-potrero'));
+    $('#btn-cp-guardar').addEventListener('click', guardarCambioPotrero);
+    $('#btn-cp-cancelar').addEventListener('click', () => { estado.cambioPotrero = null; pintarRegistros(); });
     $('#chip-sync').addEventListener('click', () => (estado.sesionVencida ? mostrarIngreso(false) : irA('registros')));
     $('#lista-recorridas').addEventListener('click', e => {
       const li = e.target.closest('[data-ver]');

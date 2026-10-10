@@ -131,6 +131,30 @@ var Sincro = (() => {
     };
   }
 
+  /**
+   * Para corregir una recorrida que el panel rechazó (un potrero dado de baja
+   * o mal elegido). Es la misma recorrida, con otra versión: vuelve a la cola
+   * y el panel la actualiza por su uuid, mediciones incluidas.
+   */
+  function puedeCambiarPotrero(recorrida) {
+    return recorrida.sync === 'rechazada';
+  }
+
+  function cambiarPotrero(recorrida, campo, potrero) {
+    return {
+      ...recorrida,
+      campoId: campo.id,
+      campoNombre: campo.nombre,
+      potreroId: potrero.id,
+      potreroNombre: potrero.nombre,
+      rev: (recorrida.rev || 0) + 1,
+      sync: 'pendiente',
+      intentos: 0,
+      proximo: 0,
+      error: null,
+    };
+  }
+
   /** "iPhone · Safari", "Android · Chrome": el nombre del token y de la recorrida. */
   function describirDispositivo(ua) {
     const texto = ua || '';
@@ -147,5 +171,5 @@ var Sincro = (() => {
     return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   }
 
-  return { armarCuerpo, clasificar, esperaReintento, crearCola, describirDispositivo, escapar };
+  return { armarCuerpo, clasificar, esperaReintento, crearCola, puedeCambiarPotrero, cambiarPotrero, describirDispositivo, escapar };
 })();
