@@ -715,7 +715,7 @@
 
     $('#btn-ir-panel').disabled = !navigator.onLine;
     $('#ir-panel-detalle').textContent = navigator.onLine
-      ? 'Campos, potreros, recorridas y usuarios. Se abre en el navegador.'
+      ? 'Campos, potreros, recorridas y usuarios. Para volver: menú del usuario → Abrir la app de campo.'
       : 'Necesitás conexión para entrar al panel.';
   }
 
@@ -725,25 +725,18 @@
   }
 
   // El panel se abre con un enlace de un solo uso, sin volver a escribir la
-  // contraseña. La ventana se abre antes de pedir el enlace: si se abriera
-  // después de esperar al servidor, el navegador la bloquearía.
+  // contraseña, en la misma ventana: instalada, la app lo muestra adentro
+  // porque el panel entra en el alcance del manifest (P14).
   async function irAlPanel() {
     if (!estado.sesion || estado.sesionVencida) { mostrarIngreso(false); return; }
     if (!navigator.onLine) { toast('Necesitás conexión para entrar al panel', 'mal'); return; }
     const boton = $('#btn-ir-panel');
     if (boton.dataset.abriendo) return;
     boton.dataset.abriendo = '1';
-    const ventana = window.open('', '_blank');
     try {
       const { url } = await Api.enlacePanel();
-      if (ventana && !ventana.closed) {
-        ventana.opener = null;
-        ventana.location.replace(url);
-      } else {
-        location.assign(url);
-      }
+      location.assign(url);
     } catch (e) {
-      if (ventana) ventana.close();
       if (e.estado === 401) {
         await sesionVencida();
         mostrarIngreso(false);

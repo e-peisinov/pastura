@@ -90,7 +90,7 @@ a escribir la contraseña, la app pide con su token `POST /api/v1/enlace-panel`
 y recibe un enlace firmado que vence en un minuto y sirve una sola vez (el
 pase se guarda en la caché y se consume al usarlo); el enlace abre la sesión
 del panel de ese usuario, reemplazando la que hubiera en ese navegador, y
-lleva al tablero. Se descartó compartir una sola sesión entre las dos partes
+lleva al tablero (se abre dentro de la app, P14). Se descartó compartir una sola sesión entre las dos partes
 (P10: la app necesita un token que no venza sin señal). El panel suma
 "Abrir la app de campo" en el menú del usuario.
 
@@ -111,3 +111,13 @@ imágenes de Leaflet en `/build/...` (íconos en blanco: el botón del menú en
 mobile no se veía). Las redirecciones van con dirección absoluta (`route()`,
 `url('/')`) y Vite escribe las del CSS relativas al propio CSS
 (`renderBuiltUrl`). Lo cuidan `SubcarpetaTest` y `npm run test:build`.
+
+**P14 — 2026-10-10 — El panel se abre dentro de la app instalada.** "Ir al
+panel" abría una ventana nueva, y desde la app instalada en el iPhone eso
+salía a Safari. Ahora navega en la misma ventana y el alcance (`scope`) del
+manifest es la carpeta de arriba de `/app`, así que el panel queda dentro de
+la app. La app sigue arrancando en `/app` (`start_url`) y el service worker
+sigue limitado a `/app`: el panel nunca se guarda en el celular y necesita
+señal. Se vuelve con "Abrir la app de campo" del menú del usuario. La sesión
+del panel queda guardada en la app, aparte de la del navegador. En el iPhone
+el cambio de alcance se toma al volver a agregar el ícono.
