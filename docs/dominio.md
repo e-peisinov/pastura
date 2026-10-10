@@ -8,7 +8,7 @@ Modelo de datos, reglas de negocio y alcance de la v1. El vocabulario está en
 
 Un productor (por ahora, una sola organización, P1) mide la altura de sus
 pasturas con un pasturómetro de disco y el celular. La **app de campo**
-(`poc/`, PWA offline) calcula la altura del disco con la cámara y guarda cada
+(`public/app/`, PWA offline, P9) calcula la altura del disco con la cámara y guarda cada
 punto con GPS. El **panel** (este Laravel) organiza los campos y potreros, recibe
 las recorridas que sube la app y las muestra en tablas y en el mapa.
 
@@ -114,5 +114,5 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Inicio (tablero) | En curso |
 | Campos y potreros (ABM, contorno en el mapa, importar KML/KMZ) | Hecha |
 | Recorridas (listado, detalle con mapa de puntos, anular, descartar puntos, CSV) | Hecha |
-| API de sincronización + login en la app de campo | Pendiente |
+| API de sincronización + login en la app de campo (P9 a P11) | Hecha |
 | Reportes, configuración, auditoría | Más adelante |

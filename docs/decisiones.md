@@ -45,3 +45,34 @@ Estado: el CSV es el dato crudo y el filtro lo hace quien lo abre. Exportar,
 como descartar y anular, pide Editar en Recorridas y respeta la pertenencia.
 El período del listado admite "sin fecha" (atajo *Todo*), por eso no usa
 `FiltraPorPeriodo`, que cae siempre en hoy.
+
+**P9 — 2026-10-10 — Todo en un servidor Apache propio; la app vive en `/app`.**
+El panel y la app de campo se publican juntos en el mismo servidor Apache (con
+HTTPS: sin él, el celular no habilita cámara, GPS ni service worker). La app
+pasa de `poc/` a `public/app/` y llama a la API con rutas relativas a su
+propia dirección, así anda en la raíz del dominio o en una subcarpeta. Al
+compartir origen no hace falta CORS. GitHub Pages queda congelado en la
+última versión de `poc/` (mide, pero no sincroniza); el workflow
+`pages.yml` se borra cuando el servidor esté andando.
+
+**P10 — 2026-10-10 — La app se autentica con tokens de Sanctum, no con la
+sesión del panel.** La app manda usuario y contraseña del panel y recibe un
+token Bearer (uno por celular, con el nombre del dispositivo). La sesión de
+Laravel vence a las 2 horas y el token CSRF hay que pedirlo con señal; un
+recorredor puede pasar días sin señal y tiene que poder subir al volver sin
+reloguearse. Los tokens no vencen, pero se revocan al salir de la app, y en
+cada pedido se revisa que el usuario siga activo (si no, 401). Toda la API,
+salvo el ingreso, pide Editar en Recorridas; el ingreso rechaza a quien no lo
+tiene. Sanctum queda solo con tokens (`guard` vacío): la API no mira la
+cookie de sesión del panel aunque compartan origen.
+
+**P11 — 2026-10-10 — Reglas de la sincronización.** `PUT /api/v1/recorridas/{uuid}`
+hace upsert de la recorrida y de cada medición por su uuid (P4), todo en una
+transacción. El dueño sale del token, nunca del JSON: un uuid que ya es de
+otro usuario da 403, también para un administrador. El potrero tiene que
+estar activo y su campo también (regla 4), al crear y al actualizar. Las
+mediciones que no vienen en el pedido **se conservan**: la app puede subir en
+partes y un celular que pierde datos no borra nada en el panel. La API nunca
+toca `activo`: lo que se anuló o descartó en el panel sigue así aunque la app
+lo vuelva a subir. Las fechas llegan en ISO 8601 con zona y se guardan en la
+hora del servidor.

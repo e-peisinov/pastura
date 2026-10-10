@@ -11,11 +11,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    // Los tokens de la app de campo (P10).
+    use HasApiTokens, HasFactory, Notifiable;
 
     /** El módulo cuya edición nunca puede quedar sin un usuario activo (D49). */
     public const MODULO_USUARIOS = 'usuarios';

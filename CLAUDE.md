@@ -3,9 +3,10 @@
 Sistema para medir la altura de las pasturas con un pasturómetro de disco y la
 cámara del celular. Dos partes:
 
-- **App de campo** (`poc/`): PWA offline, sin build, publicada en GitHub Pages
-  (https://e-peisinov.github.io/pastura/). Mide con los marcadores ArUco del
-  disco, guarda cada punto con GPS y sincroniza con el panel.
+- **App de campo** (`public/app/`, se abre en `/app`): PWA offline, sin
+  build, servida por el mismo Apache que el panel (P9). Mide con los
+  marcadores ArUco del disco, guarda cada punto con GPS y sube las recorridas
+  al panel por la API (`routes/api.php`, P10 y P11).
 - **Panel de administración** (este Laravel): campos, potreros con su contorno
   en el mapa, recorridas y mediciones, usuarios y permisos. 100 % responsive.
 
@@ -46,7 +47,8 @@ están hechas y cuáles faltan está en la tabla de alcance de
 | Build | Vite | ^7 + `laravel-vite-plugin` ^2 |
 | Base de datos | MySQL | XAMPP local, base `pastura` |
 | Tests | PHPUnit | ^11.5 |
-| App de campo | JS sin build + js-aruco2 | `poc/` |
+| API de la app | Laravel Sanctum (tokens Bearer) | ^4 |
+| App de campo | JS sin build + js-aruco2 | `public/app/` |
 
 La UI se arma con los componentes propios `<x-ui.*>`. No se instala Flux.
 
@@ -83,16 +85,25 @@ estándar primero y después la pantalla.
     la base local.** El esquema se actualiza con `php artisan migrate` y los
     datos de referencia nuevos con `php artisan db:seed --class=...`.
 
-## App de campo (`poc/`)
+## App de campo (`public/app/`)
 
-- Sin build: HTML, CSS y JS planos. Se publica sola en GitHub Pages en cada
-  push a `main` que toque `poc/` (`.github/workflows/pages.yml`).
-- Al cambiar un archivo de `poc/`, subir `VERSION` en `poc/sw.js` si cambia la
-  lista de archivos; el service worker actualiza en segundo plano.
+- Sin build: HTML, CSS y JS planos. Se publica junto con el panel en el
+  servidor Apache (P9), en `/app`; en local,
+  http://localhost/pastura/public/app/. Necesita HTTPS (o `localhost`) para
+  la cámara, el GPS y el service worker. GitHub Pages quedó congelado en la
+  última versión de `poc/`.
+- Habla con el panel solo por `../api/v1/` (`js/api.js`), con el token del
+  ingreso. La cola de subida (`js/sincronizacion.js`) no toca la pantalla ni
+  IndexedDB: se prueba en Node con `npm run test:app`, **test primero**.
+- Al cambiar un archivo de `public/app/`, subir `VERSION` en
+  `public/app/sw.js` si cambia la lista de archivos; el service worker
+  actualiza en segundo plano y nunca intercepta la API (queda fuera de su
+  alcance).
 - `?prueba` en la URL hace correr el bucle de cámara aunque la pestaña esté
   oculta (pruebas automáticas en el navegador).
-- El núcleo de visión (`poc/js/vision-core.js`, `poc/js/calibracion.js`) corre
-  igual en Node: se prueba con imágenes sintéticas antes de tocarlo.
+- El núcleo de visión (`public/app/js/vision-core.js`,
+  `public/app/js/calibracion.js`) corre igual en Node: se prueba con imágenes
+  sintéticas antes de tocarlo.
 
 ## Comandos
 
@@ -101,6 +112,7 @@ php artisan serve          # o http://localhost/pastura/public con XAMPP
 npm run dev                # Vite en watch
 npm run build              # build de producción
 php artisan test           # suite completa
+npm run test:app           # lógica de la app de campo (Node)
 php artisan migrate                # aplicar migraciones nuevas (nunca fresh, regla 12)
 php artisan db:seed --class=UnSeeder   # un seeder de referencia puntual
 php artisan migrate --seed         # SOLO en una instalación nueva, con la base vacía

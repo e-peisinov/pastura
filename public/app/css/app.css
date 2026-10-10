@@ -182,6 +182,27 @@ td.mal, .resumen.mal { color: var(--mal); }
 .lista li .sub { white-space: normal; }
 .lista .vacio { color: var(--texto-suave); justify-content: center; border-style: dashed; }
 
+/* ---------- recorridas ---------- */
+.tarjeta-arriba { margin: 0 0 .75rem !important; }
+.recorrida-actual { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.recorrida-actual > div { min-width: 0; }
+.lista-recorridas li { cursor: pointer; }
+.lista-recorridas li.elegida { border-color: var(--acento); box-shadow: inset 3px 0 0 var(--acento); }
+.lista-recorridas .chip { flex-shrink: 0; }
+.error-sync { color: var(--mal); font-size: .85rem; display: block; }
+
+/* ---------- ingreso ---------- */
+.pantalla-ingreso {
+  position: fixed; inset: 0; z-index: 30; overflow-y: auto;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1rem + env(safe-area-inset-bottom));
+  background: var(--fondo);
+}
+.ingreso { width: 100%; max-width: 420px; margin: 0; }
+.ingreso h1 { font-size: 1.4rem; margin: 0 0 .5rem; color: var(--acento); }
+.error-campo { color: var(--mal); font-size: .9rem; font-weight: 600; margin: 0 0 .75rem; }
+.btn-ancho { width: 100%; margin-top: .5rem; }
+
 /* ---------- pestañas ---------- */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;

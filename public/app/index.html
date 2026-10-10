@@ -14,18 +14,68 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <!-- INGRESO: con el usuario y la contraseña del panel (P10) -->
+  <section id="pantalla-ingreso" class="pantalla-ingreso" hidden>
+    <form id="form-ingreso" class="tarjeta ingreso" novalidate>
+      <h1>Pasturómetro</h1>
+      <p class="ayuda">Ingresá con tu usuario del panel. Después la app funciona sin señal y sube las recorridas cuando vuelve la conexión.</p>
+      <label class="campo">
+        <span>Email</span>
+        <input id="ingreso-email" type="email" autocomplete="username" inputmode="email" required>
+      </label>
+      <label class="campo">
+        <span>Contraseña</span>
+        <input id="ingreso-password" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="ingreso-error" class="error-campo" hidden></p>
+      <button id="btn-ingresar" type="submit" class="btn btn-primario btn-ancho">Ingresar</button>
+      <button id="btn-cancelar-ingreso" type="button" class="btn btn-secundario btn-ancho" hidden>Seguir sin ingresar</button>
+    </form>
+  </section>
+
   <header class="barra">
     <div class="barra-titulo">
       <strong>Pasturómetro</strong>
-      <span id="potrero-actual" class="sub">Sin potrero</span>
+      <span id="potrero-actual" class="sub">Sin recorrida</span>
     </div>
     <div class="chips">
       <span id="chip-nivel" class="chip" hidden>Nivel –</span>
       <span id="chip-gps" class="chip">GPS…</span>
+      <button id="chip-sync" class="chip chip-boton" hidden></button>
     </div>
   </header>
 
   <main>
+    <!-- MEDIR, arriba de la cámara: la recorrida en curso o elegir dónde medir -->
+    <div id="medir-arriba">
+      <div id="aviso-sesion" class="aviso" hidden>
+        La sesión venció: las recorridas quedan guardadas en el celular. <button class="link" data-ingresar>Ingresar de nuevo</button> para subirlas.
+      </div>
+      <div id="nueva-recorrida" class="tarjeta tarjeta-arriba" hidden>
+        <h2>Nueva recorrida</h2>
+        <label class="campo">
+          <span>Campo</span>
+          <select id="sel-campo"></select>
+        </label>
+        <label class="campo">
+          <span>Potrero</span>
+          <select id="sel-potrero"></select>
+        </label>
+        <p id="ayuda-catalogo" class="ayuda" hidden></p>
+        <div class="fila">
+          <button id="btn-empezar" class="btn btn-primario">Empezar recorrida</button>
+          <button id="btn-actualizar-campos" class="btn btn-secundario">Actualizar campos</button>
+        </div>
+      </div>
+      <div id="recorrida-actual" class="tarjeta tarjeta-arriba recorrida-actual" hidden>
+        <div>
+          <strong id="ra-potrero"></strong>
+          <span id="ra-detalle" class="sub"></span>
+        </div>
+        <button id="btn-terminar" class="btn btn-secundario btn-chico">Terminar</button>
+      </div>
+    </div>
+
     <!-- Cámara: compartida por Medir y Calibrar -->
     <section id="vista-camara" class="camara">
       <canvas id="lienzo"></canvas>
@@ -92,17 +142,23 @@
     <!-- REGISTROS -->
     <section id="tab-registros" class="tab" hidden>
       <div class="tarjeta">
-        <label class="campo">
-          <span>Potrero</span>
-          <input id="input-potrero" type="text" placeholder="Ej.: Potrero 4" autocomplete="off">
-        </label>
+        <div class="ultima-cabecera">
+          <h2>Recorridas en el celular</h2>
+          <button id="btn-subir" class="btn btn-secundario btn-chico">Subir ahora</button>
+        </div>
+        <p id="estado-sync" class="ayuda"></p>
+        <ul id="lista-recorridas" class="lista lista-recorridas"></ul>
+      </div>
+      <div class="tarjeta">
+        <h2 id="reg-titulo">Sin recorridas</h2>
+        <p id="reg-estado" class="sub"></p>
         <div class="kpis">
           <div class="kpi"><span>Puntos</span><strong id="kpi-puntos">0</strong></div>
           <div class="kpi"><span>Altura media</span><strong id="kpi-altura">–</strong></div>
           <div class="kpi" id="kpi-kg-caja"><span>kg MS/ha</span><strong id="kpi-kg">–</strong></div>
         </div>
         <div class="fila">
-          <button id="btn-csv-potrero" class="btn btn-secundario">CSV del potrero</button>
+          <button id="btn-csv-recorrida" class="btn btn-secundario">CSV de la recorrida</button>
           <button id="btn-csv-todo" class="btn btn-secundario">CSV de todo</button>
         </div>
       </div>
@@ -138,6 +194,11 @@
         </div>
       </div>
       <div class="tarjeta">
+        <h2>Cuenta</h2>
+        <p id="cuenta-usuario" class="ayuda"></p>
+        <button id="btn-salir" class="btn btn-secundario btn-chico">Salir</button>
+      </div>
+      <div class="tarjeta">
         <h2>Esta app</h2>
         <p id="estado-offline" class="ayuda">Preparando uso sin conexión…</p>
         <p id="ayuda-instalar" class="ayuda" hidden></p>
@@ -162,6 +223,8 @@
   <script src="vendor/js-aruco2/aruco_4x4_1000.js"></script>
   <script src="js/vision-core.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/sincronizacion.js"></script>
   <script src="js/calibracion.js"></script>
   <script src="js/app.js"></script>
 </body>

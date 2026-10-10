@@ -1,6 +1,8 @@
 /*
- * Pasturómetro: prueba de concepto.
+ * Pasturómetro: app de campo.
  * Cámara → worker de visión → calibración → medición con GPS, todo offline.
+ * Cada medición pertenece a una recorrida (campo y potrero del panel); la
+ * cola sube las recorridas cuando hay señal (P9 a P11).
  */
 (() => {
   'use strict';
@@ -23,7 +25,11 @@
     cal: null,
     puntos: [],
     mediciones: [],
-    potrero: '',
+    sesion: null,          // { token, usuario: { id, nombre, email, rol } } (P10)
+    sesionVencida: false,  // el panel respondió 401: hay que volver a ingresar
+    catalogo: null,        // { generado_en, campos: [{ id, nombre, potreros: [...] }] }
+    recorridas: [],
+    vista: null,           // uuid de la recorrida que muestra Registros, o 'anteriores'
     tab: 'medir',
     fuente: null,          // 'camara' | 'foto' | null
     stream: null,
@@ -333,7 +339,8 @@
   /* ================= medir ================= */
 
   async function medir() {
-    if (!estado.cal || !estado.fuente || estado.captura) return;
+    const recorrida = recorridaAbierta();
+    if (!estado.cal || !estado.fuente || estado.captura || !recorrida) return;
     const boton = $('#btn-medir');
     boton.disabled = true;
     $('#btn-medir-texto').textContent = 'Midiendo…';
@@ -351,7 +358,8 @@
     const g = estado.gps && Date.now() - estado.gps.ts <= GPS_VIEJO_MS ? estado.gps : null;
     const m = {
       id: uuid(),
-      potrero: estado.potrero || 'Sin potrero',
+      recorrida: recorrida.uuid,
+      potrero: recorrida.potreroNombre,
       creado: Date.now(),
       alturaCm,
       distanciaCm: Calibracion.distancia(estado.cal, r.tam),
@@ -370,10 +378,27 @@
     };
     await DB.guardarMedicion(m);
     estado.mediciones.push(m);
+    await marcarCambio(recorrida.uuid);
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     pintarUltima(m);
     pintarRegistros();
     toast(g ? 'Punto guardado' : 'Punto guardado sin GPS', g ? 'ok' : 'medio');
+    sincronizar();
+  }
+
+  // Borra un punto del celular. Uno que ya está en el panel no se borra acá:
+  // el panel lo conserva (P11) y se descarta desde la ficha de la recorrida.
+  async function borrarMedicion(id) {
+    const m = estado.mediciones.find(x => x.id === id);
+    if (!m) return false;
+    if (m.subida) {
+      toast('Este punto ya está en el panel: descartalo desde la ficha de la recorrida.', 'medio');
+      return false;
+    }
+    await DB.borrarMedicion(id);
+    estado.mediciones = estado.mediciones.filter(x => x.id !== id);
+    if (m.recorrida) await marcarCambio(m.recorrida);
+    return true;
   }
 
   function pintarUltima(m) {
@@ -394,8 +419,7 @@
       <p class="sub">${m.imagenes} imágenes · dispersión ±${nf1.format(m.dispersionCm)} cm${m.inclinacion !== null ? ` · nivel ${nf0.format(m.inclinacion)}°` : ''}</p>
       <button class="btn btn-secundario btn-chico" id="btn-deshacer">Deshacer</button>`;
     $('#btn-deshacer').addEventListener('click', async () => {
-      await DB.borrarMedicion(m.id);
-      estado.mediciones = estado.mediciones.filter(x => x.id !== m.id);
+      if (!(await borrarMedicion(m.id))) return;
       caja.hidden = true;
       pintarRegistros();
       toast('Medición descartada');
@@ -471,14 +495,114 @@
 
   /* ================= registros ================= */
 
-  function delPotrero() {
-    const p = estado.potrero || 'Sin potrero';
-    return estado.mediciones.filter(m => m.potrero === p).sort((a, b) => b.creado - a.creado);
+  const esc = Sincro.escapar;
+  const hora = ms => new Date(ms).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  const fechaHora = ms => new Date(ms).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+
+  function medicionesDe(vista) {
+    const lista = vista === 'anteriores'
+      ? estado.mediciones.filter(m => !m.recorrida)
+      : estado.mediciones.filter(m => m.recorrida === vista);
+    return lista.sort((a, b) => b.creado - a.creado);
+  }
+
+  function recorridasOrdenadas() {
+    return [...estado.recorridas].sort((a, b) => b.iniciada - a.iniciada);
+  }
+
+  // Lo que Registros muestra si no se eligió nada: la abierta, o la más reciente.
+  function vistaVigente() {
+    const existe = estado.vista === 'anteriores'
+      ? estado.mediciones.some(m => !m.recorrida)
+      : estado.recorridas.some(r => r.uuid === estado.vista);
+    if (existe) return estado.vista;
+    const abierta = recorridaAbierta();
+    if (abierta) return abierta.uuid;
+    const [ultima] = recorridasOrdenadas();
+    if (ultima) return ultima.uuid;
+    return estado.mediciones.some(m => !m.recorrida) ? 'anteriores' : null;
+  }
+
+  /** [texto, clase del chip, detalle] del estado de subida de una recorrida. */
+  function estadoSync(r) {
+    const usuario = estado.sesion && estado.sesion.usuario;
+    if (!usuario || r.usuarioId !== usuario.id) return [`De ${r.usuarioNombre || 'otro usuario'}`, '', 'Se sube cuando ese usuario vuelva a ingresar.'];
+    if (r.sync === 'nueva') return ['Sin puntos', '', ''];
+    if (r.sync === 'sincronizada') return ['En el panel', 'chip-ok', ''];
+    if (r.sync === 'rechazada') return ['Rechazada', 'chip-mal', r.error || ''];
+    return ['Pendiente', 'chip-medio', r.intentos ? `Sin conexión con el panel. Próximo intento: ${hora(r.proximo)}` : ''];
+  }
+
+  function pintarRecorridas() {
+    const vista = vistaVigente();
+    const items = recorridasOrdenadas().map(r => {
+      const [texto, clase, detalle] = estadoSync(r);
+      const puntos = medicionesDe(r.uuid).length;
+      return `
+      <li data-ver="${esc(r.uuid)}" class="${r.uuid === vista ? 'elegida' : ''}">
+        <div>
+          <strong>${esc(r.potreroNombre)}</strong> · ${esc(r.campoNombre)}${r.terminada ? '' : ' · <em>en curso</em>'}
+          <span class="sub">${fechaHora(r.iniciada)} · ${puntos} ${puntos === 1 ? 'punto' : 'puntos'}</span>
+          ${detalle ? `<span class="${r.sync === 'rechazada' ? 'error-sync' : 'sub'}">${esc(detalle)}</span>` : ''}
+        </div>
+        <span class="chip ${clase}">${texto}</span>
+      </li>`;
+    });
+    const anteriores = medicionesDe('anteriores').length;
+    if (anteriores) {
+      items.push(`
+      <li data-ver="anteriores" class="${vista === 'anteriores' ? 'elegida' : ''}">
+        <div>
+          <strong>Anteriores a las recorridas</strong>
+          <span class="sub">${anteriores} ${anteriores === 1 ? 'punto' : 'puntos'} · quedan solo en el celular</span>
+        </div>
+      </li>`);
+    }
+    $('#lista-recorridas').innerHTML = items.join('') || '<li class="vacio">Todavía no hay recorridas. Empezá una desde Medir.</li>';
+    pintarSync();
+  }
+
+  function pintarSync() {
+    const usuario = estado.sesion && estado.sesion.usuario;
+    const mias = usuario ? estado.recorridas.filter(r => r.usuarioId === usuario.id) : [];
+    const pendientes = mias.filter(r => r.sync === 'pendiente').length;
+    const rechazadas = mias.filter(r => r.sync === 'rechazada').length;
+
+    const chip = $('#chip-sync');
+    chip.classList.remove('chip-medio', 'chip-mal');
+    if (estado.sesionVencida || !usuario) {
+      chip.textContent = 'Sin sesión';
+      chip.classList.add('chip-mal');
+      chip.hidden = !mias.length && !estado.sesionVencida;
+    } else {
+      chip.textContent = `↑ ${pendientes + rechazadas}`;
+      chip.classList.add(rechazadas ? 'chip-mal' : 'chip-medio');
+      chip.hidden = pendientes + rechazadas === 0;
+    }
+    $('#aviso-sesion').hidden = !estado.sesionVencida;
+
+    let texto;
+    if (estado.sesionVencida) texto = 'La sesión venció: ingresá de nuevo para subir.';
+    else if (!navigator.onLine && pendientes) texto = `Sin señal: ${pendientes} ${pendientes === 1 ? 'recorrida espera' : 'recorridas esperan'} para subir.`;
+    else if (rechazadas) texto = `${rechazadas} ${rechazadas === 1 ? 'recorrida rechazada' : 'recorridas rechazadas'} por el panel. Revisá el motivo y tocá Subir ahora para reintentar.`;
+    else if (pendientes) texto = `${pendientes} ${pendientes === 1 ? 'recorrida pendiente' : 'recorridas pendientes'} de subir.`;
+    else texto = mias.length ? 'Todo está en el panel.' : '';
+    $('#estado-sync').textContent = texto;
+    $('#estado-sync').hidden = !texto;
   }
 
   function pintarRegistros() {
-    $('#potrero-actual').textContent = estado.potrero || 'Sin potrero';
-    const lista = delPotrero();
+    const abierta = recorridaAbierta();
+    $('#potrero-actual').textContent = abierta ? `${abierta.potreroNombre} · ${abierta.campoNombre}` : 'Sin recorrida';
+    pintarRecorridas();
+
+    const vista = vistaVigente();
+    const r = estado.recorridas.find(x => x.uuid === vista);
+    $('#reg-titulo').textContent = r ? `${r.potreroNombre} · ${r.campoNombre}` : vista === 'anteriores' ? 'Anteriores a las recorridas' : 'Sin recorridas';
+    $('#reg-estado').textContent = r ? `${fechaHora(r.iniciada)}${r.terminada ? ` a ${hora(r.terminada)}` : ' · en curso'}` : '';
+    $('#btn-csv-recorrida').disabled = !vista;
+
+    const lista = vista ? medicionesDe(vista) : [];
     $('#kpi-puntos').textContent = String(lista.length);
     const media = lista.length ? lista.reduce((s, m) => s + m.alturaCm, 0) / lista.length : null;
     $('#kpi-altura').textContent = media === null ? '–' : `${nf1.format(media)} cm`;
@@ -488,7 +612,7 @@
 
     const ul = $('#lista-mediciones');
     if (!lista.length) {
-      ul.innerHTML = '<li class="vacio">Sin mediciones en este potrero todavía.</li>';
+      ul.innerHTML = '<li class="vacio">Sin mediciones en esta recorrida todavía.</li>';
       return;
     }
     ul.innerHTML = lista.map(m => `
@@ -497,7 +621,7 @@
           <strong>${nf1.format(m.alturaCm)} cm</strong>${m.kgMsHa !== null ? ` · ${nf0.format(m.kgMsHa)} kg MS/ha` : ''}
           <span class="sub">${new Date(m.creado).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })} · ${m.lat !== null ? `±${nf0.format(m.precisionM)} m` : 'sin GPS'} · ±${nf1.format(m.dispersionCm)} cm</span>
         </div>
-        <button class="btn-x" data-borrar-medicion="${m.id}" aria-label="Borrar medición">×</button>
+        ${m.subida ? '<span class="chip chip-ok" title="Ya está en el panel">✓</span>' : `<button class="btn-x" data-borrar-medicion="${m.id}" aria-label="Borrar medición">×</button>`}
       </li>`).join('');
   }
 
@@ -561,15 +685,247 @@
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('activa', b.dataset.tab === tab));
     document.querySelectorAll('.tab').forEach(s => { s.hidden = s.id !== `tab-${tab}`; });
     $('#vista-camara').hidden = !tabConCamara();
+    $('#medir-arriba').hidden = tab !== 'medir';
     if (tab === 'registros') pintarRegistros();
   }
 
   function actualizarBotones() {
     const hayFuente = !!estado.fuente;
     const capturando = !!estado.captura;
-    $('#btn-medir').disabled = !hayFuente || !estado.cal || capturando;
+    const abierta = recorridaAbierta();
+    $('#btn-medir').disabled = !hayFuente || !estado.cal || capturando || !abierta;
     $('#btn-capturar').disabled = !hayFuente || capturando;
     $('#aviso-calibrar').hidden = !!estado.cal;
+    $('#nueva-recorrida').hidden = !!abierta || !estado.sesion;
+    $('#recorrida-actual').hidden = !abierta;
+    if (abierta) {
+      const puntos = medicionesDe(abierta.uuid).length;
+      $('#ra-potrero').textContent = `${abierta.potreroNombre} · ${abierta.campoNombre}`;
+      $('#ra-detalle').textContent = `${puntos} ${puntos === 1 ? 'punto' : 'puntos'} · desde las ${hora(abierta.iniciada)}`;
+    }
+  }
+
+  /* ================= sesión (P10) ================= */
+
+  function mostrarIngreso(obligatorio) {
+    $('#pantalla-ingreso').hidden = false;
+    $('#btn-cancelar-ingreso').hidden = obligatorio;
+    $('#ingreso-error').hidden = true;
+    const email = estado.sesion ? estado.sesion.usuario.email : '';
+    if (email && !$('#ingreso-email').value) $('#ingreso-email').value = email;
+    ($('#ingreso-email').value ? $('#ingreso-password') : $('#ingreso-email')).focus();
+  }
+
+  async function ingresar(e) {
+    e.preventDefault();
+    const email = $('#ingreso-email').value.trim();
+    const password = $('#ingreso-password').value;
+    const error = $('#ingreso-error');
+    error.hidden = true;
+    if (!email || !password) {
+      error.textContent = 'Completá el email y la contraseña.';
+      error.hidden = false;
+      return;
+    }
+    const boton = $('#btn-ingresar');
+    boton.disabled = true;
+    boton.textContent = 'Ingresando…';
+    try {
+      const r = await Api.ingresar(email, password, Sincro.describirDispositivo(navigator.userAgent));
+      estado.sesion = { token: r.token, usuario: r.usuario };
+      estado.sesionVencida = false;
+      await DB.guardar('sesion', estado.sesion);
+      Api.usarToken(r.token);
+      $('#ingreso-password').value = '';
+      $('#pantalla-ingreso').hidden = true;
+      toast(`Hola, ${r.usuario.nombre}`);
+      pintarCuenta();
+      actualizarBotones();
+      pintarRegistros();
+      await cargarCatalogo();
+      sincronizar();
+    } catch (err) {
+      error.textContent = err.estado === 0
+        ? 'Sin conexión con el panel. Para ingresar hace falta señal (solo la primera vez).'
+        : err.message;
+      error.hidden = false;
+    } finally {
+      boton.disabled = false;
+      boton.textContent = 'Ingresar';
+    }
+  }
+
+  async function salir() {
+    try { await Api.salir(); } catch (_) { /* sin señal: el token se revoca desde el panel */ }
+    estado.sesion = null;
+    estado.sesionVencida = false;
+    Api.usarToken(null);
+    await DB.borrar('sesion');
+    pintarCuenta();
+    actualizarBotones();
+    pintarRegistros();
+    mostrarIngreso(true);
+  }
+
+  async function sesionVencida() {
+    if (estado.sesionVencida) return;
+    estado.sesionVencida = true;
+    pintarSync();
+    toast('La sesión venció. Ingresá de nuevo para subir las recorridas.', 'medio');
+  }
+
+  function pintarCuenta() {
+    const u = estado.sesion && estado.sesion.usuario;
+    const pendientes = u ? estado.recorridas.filter(r => r.usuarioId === u.id && r.sync !== 'sincronizada' && r.sync !== 'nueva').length : 0;
+    $('#cuenta-usuario').textContent = u
+      ? `${u.nombre} (${u.email}).${pendientes ? ` Tiene ${pendientes} ${pendientes === 1 ? 'recorrida' : 'recorridas'} sin subir: si salís quedan en el celular y se suben cuando vuelvas a ingresar.` : ''}`
+      : 'Sin ingresar.';
+    $('#btn-salir').hidden = !u;
+  }
+
+  /* ================= campos y potreros ================= */
+
+  async function cargarCatalogo({ avisar = false } = {}) {
+    if (!estado.sesion) return;
+    try {
+      estado.catalogo = await Api.campos();
+      await DB.guardar('catalogo', estado.catalogo);
+      pintarCatalogo();
+      if (avisar) toast('Lista de campos actualizada');
+    } catch (e) {
+      if (e.estado === 401) await sesionVencida();
+      else if (avisar) toast(e.estado === 0 ? 'Sin conexión con el panel' : e.message, 'mal');
+    }
+  }
+
+  async function pintarCatalogo() {
+    const campos = estado.catalogo ? estado.catalogo.campos : [];
+    const ayuda = $('#ayuda-catalogo');
+    ayuda.hidden = campos.length > 0;
+    ayuda.textContent = estado.catalogo
+      ? 'No hay campos con potreros activos. Cargalos en el panel y tocá Actualizar campos.'
+      : 'Todavía no se bajó la lista de campos: conectate y tocá Actualizar campos.';
+
+    const ultimo = await DB.leer('ultimoPotrero', null);
+    const campoDelUltimo = campos.find(c => c.potreros.some(p => p.id === ultimo));
+    const selCampo = $('#sel-campo');
+    const elegido = Number(selCampo.value) || (campoDelUltimo && campoDelUltimo.id);
+    selCampo.innerHTML = campos.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+    if (campos.some(c => c.id === elegido)) selCampo.value = String(elegido);
+    pintarPotreros(ultimo);
+    $('#btn-empezar').disabled = !campos.length;
+  }
+
+  function pintarPotreros(preferido) {
+    const campo = (estado.catalogo ? estado.catalogo.campos : []).find(c => c.id === Number($('#sel-campo').value));
+    const potreros = campo ? campo.potreros : [];
+    const sel = $('#sel-potrero');
+    sel.innerHTML = potreros.map(p => {
+      const extra = [p.tipo_pastura, p.superficie_ha !== null ? `${nf1.format(p.superficie_ha)} ha` : null].filter(Boolean).join(' · ');
+      return `<option value="${p.id}">${esc(p.nombre)}${extra ? ` (${esc(extra)})` : ''}</option>`;
+    }).join('');
+    if (potreros.some(p => p.id === preferido)) sel.value = String(preferido);
+  }
+
+  /* ================= recorridas ================= */
+
+  function recorridaAbierta() {
+    const u = estado.sesion && estado.sesion.usuario;
+    return u ? estado.recorridas.find(r => !r.terminada && r.usuarioId === u.id) || null : null;
+  }
+
+  async function empezarRecorrida() {
+    const campo = (estado.catalogo ? estado.catalogo.campos : []).find(c => c.id === Number($('#sel-campo').value));
+    const potrero = campo && campo.potreros.find(p => p.id === Number($('#sel-potrero').value));
+    if (!potrero || !estado.sesion || recorridaAbierta()) { toast('Elegí el campo y el potrero', 'mal'); return; }
+    const u = estado.sesion.usuario;
+    const r = {
+      uuid: uuid(),
+      usuarioId: u.id,
+      usuarioNombre: u.nombre,
+      campoId: campo.id,
+      campoNombre: campo.nombre,
+      potreroId: potrero.id,
+      potreroNombre: potrero.nombre,
+      iniciada: Date.now(),
+      terminada: null,
+      dispositivo: Sincro.describirDispositivo(navigator.userAgent),
+      // 'nueva' no se sube: pasa a 'pendiente' con el primer punto.
+      sync: 'nueva', rev: 0, revSubida: 0, intentos: 0, proximo: 0, error: null,
+    };
+    await DB.guardarRecorrida(r);
+    await DB.guardar('ultimoPotrero', potrero.id);
+    estado.recorridas.push(r);
+    estado.vista = r.uuid;
+    $('#ultima').hidden = true;
+    actualizarBotones();
+    pintarRegistros();
+    toast(`Recorrida en ${potrero.nombre}`);
+  }
+
+  async function terminarRecorrida() {
+    const abierta = recorridaAbierta();
+    if (!abierta) return;
+    if (!medicionesDe(abierta.uuid).length) {
+      // Sin puntos no hay nada que guardar ni que subir.
+      await DB.borrarRecorrida(abierta.uuid);
+      estado.recorridas = estado.recorridas.filter(r => r.uuid !== abierta.uuid);
+      toast('Recorrida sin puntos: no se guardó');
+    } else {
+      const r = { ...(await DB.recorrida(abierta.uuid)), terminada: Date.now() };
+      await DB.guardarRecorrida(r);
+      estado.recorridas = estado.recorridas.map(x => (x.uuid === r.uuid ? r : x));
+      toast('Recorrida terminada');
+    }
+    $('#ultima').hidden = true;
+    $('#btn-terminar').textContent = 'Terminar';
+    actualizarBotones();
+    pintarRegistros();
+    pintarCatalogo();
+  }
+
+  // Un punto nuevo o borrado: la recorrida cambia de versión y vuelve a la cola.
+  async function marcarCambio(uuidRecorrida) {
+    const guardada = await DB.recorrida(uuidRecorrida);
+    if (!guardada) return;
+    const r = { ...guardada, rev: (guardada.rev || 0) + 1, sync: 'pendiente', intentos: 0, proximo: 0, error: null };
+    await DB.guardarRecorrida(r);
+    estado.recorridas = estado.recorridas.map(x => (x.uuid === r.uuid ? r : x));
+    actualizarBotones();
+  }
+
+  /* ================= sincronización (P11) ================= */
+
+  const cola = Sincro.crearCola({
+    almacen: {
+      recorridas: () => DB.recorridas(),
+      medicionesDe: uuid => DB.medicionesDe(uuid),
+      guardarRecorrida: r => DB.guardarRecorrida(r),
+      marcarSubidas: ids => DB.marcarSubidas(ids),
+    },
+    api: Api,
+  });
+
+  async function sincronizar({ forzar = false } = {}) {
+    if (!estado.sesion || estado.sesionVencida) {
+      if (forzar) mostrarIngreso(false);
+      return;
+    }
+    if (!navigator.onLine && !forzar) { pintarSync(); return; }
+    try {
+      const r = await cola.procesar(estado.sesion.usuario.id, { forzar });
+      estado.recorridas = await DB.recorridas();
+      estado.mediciones = await DB.mediciones();
+      if (r.sinSesion) await sesionVencida();
+      if (r.rechazadas) toast('El panel rechazó una recorrida. Mirá el motivo en Registros.', 'mal');
+      else if (forzar && r.pendientes) toast('Sin conexión con el panel. Se reintenta solo.', 'medio');
+      else if (forzar && r.subidas) toast(`${r.subidas === 1 ? 'Recorrida subida' : `${r.subidas} recorridas subidas`}`);
+      else if (forzar && !r.sinSesion) toast('No hay nada para subir');
+    } catch (e) {
+      console.error('[sync]', e);
+    }
+    pintarRegistros();
+    pintarCuenta();
   }
 
   /* ================= offline e instalación ================= */
@@ -611,16 +967,21 @@
 
   async function iniciar() {
     estado.ajustes = { ...AJUSTES_DEFECTO, ...(await DB.leer('ajustes', {})) };
-    estado.potrero = await DB.leer('potrero', '');
     estado.puntos = await DB.puntos();
     estado.mediciones = await DB.mediciones();
+    estado.recorridas = await DB.recorridas();
+    estado.sesion = await DB.leer('sesion', null);
+    estado.catalogo = await DB.leer('catalogo', null);
     estado.cal = Calibracion.ajustar(estado.puntos);
+    Api.usarToken(estado.sesion && estado.sesion.token);
 
-    $('#input-potrero').value = estado.potrero;
     pintarAjustes();
     pintarCalibracion();
+    pintarCatalogo();
+    pintarCuenta();
     pintarRegistros();
     actualizarBotones();
+    if (!estado.sesion) mostrarIngreso(true);
 
     $('#btn-camara').addEventListener('click', activarCamara);
     $('#btn-apagar').addEventListener('click', apagarCamara);
@@ -646,9 +1007,25 @@
       toast('Calibración borrada');
     });
 
-    $('#input-potrero').addEventListener('change', async e => {
-      estado.potrero = e.target.value.trim();
-      await DB.guardar('potrero', estado.potrero);
+    $('#form-ingreso').addEventListener('submit', ingresar);
+    $('#btn-cancelar-ingreso').addEventListener('click', () => { $('#pantalla-ingreso').hidden = true; });
+    document.querySelectorAll('[data-ingresar]').forEach(b => b.addEventListener('click', () => mostrarIngreso(false)));
+    dosToques($('#btn-salir'), '¿Seguro? Tocá de nuevo', async () => {
+      $('#btn-salir').textContent = 'Salir';
+      await salir();
+    });
+
+    $('#sel-campo').addEventListener('change', () => pintarPotreros(null));
+    $('#btn-empezar').addEventListener('click', empezarRecorrida);
+    $('#btn-actualizar-campos').addEventListener('click', () => cargarCatalogo({ avisar: true }));
+    dosToques($('#btn-terminar'), '¿Terminar?', terminarRecorrida);
+
+    $('#btn-subir').addEventListener('click', () => sincronizar({ forzar: true }));
+    $('#chip-sync').addEventListener('click', () => (estado.sesionVencida ? mostrarIngreso(false) : irA('registros')));
+    $('#lista-recorridas').addEventListener('click', e => {
+      const li = e.target.closest('[data-ver]');
+      if (!li) return;
+      estado.vista = li.dataset.ver;
       pintarRegistros();
     });
     $('#lista-mediciones').addEventListener('click', async e => {
@@ -661,15 +1038,22 @@
         setTimeout(() => { if (b.isConnected) { delete b.dataset.confirmando; b.textContent = '×'; b.classList.remove('btn-x-confirmar'); } }, 3000);
         return;
       }
-      await DB.borrarMedicion(b.dataset.borrarMedicion);
-      estado.mediciones = estado.mediciones.filter(m => m.id !== b.dataset.borrarMedicion);
-      pintarRegistros();
+      if (await borrarMedicion(b.dataset.borrarMedicion)) {
+        actualizarBotones();
+        pintarRegistros();
+        sincronizar();
+      }
     });
-    $('#btn-csv-potrero').addEventListener('click', () => exportar(delPotrero(), `mediciones-${(estado.potrero || 'sin-potrero').replace(/[^\w-]+/g, '-')}`));
+    $('#btn-csv-recorrida').addEventListener('click', () => {
+      const vista = vistaVigente();
+      const r = estado.recorridas.find(x => x.uuid === vista);
+      const nombre = r ? `${r.potreroNombre}-${new Date(r.iniciada).toISOString().slice(0, 10)}` : 'anteriores';
+      exportar(medicionesDe(vista), `mediciones-${nombre.replace(/[^\w-]+/g, '-')}`);
+    });
     $('#btn-csv-todo').addEventListener('click', () => exportar([...estado.mediciones], 'mediciones-todas'));
 
     ['#aj-cano', '#aj-cuadros', '#aj-resolucion', '#aj-bio-a', '#aj-bio-b'].forEach(s => $(s).addEventListener('change', guardarAjustes));
-    dosToques($('#btn-borrar-todo'), '¿Seguro? Se borra todo. Tocá de nuevo', async () => {
+    dosToques($('#btn-borrar-todo'), '¿Seguro? Se borra todo, también lo que no se subió. Tocá de nuevo', async () => {
       await DB.borrarTodo();
       location.reload();
     });
@@ -677,6 +1061,14 @@
     iniciarGps();
     iniciarOffline();
     siguiente(bucle);
+
+    // La cola sube sola: al volver la señal, al volver a la app y cada minuto.
+    window.addEventListener('online', () => sincronizar());
+    window.addEventListener('offline', pintarSync);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizar(); });
+    setInterval(() => sincronizar(), 60000);
+    if (estado.sesion && navigator.onLine) cargarCatalogo();
+    sincronizar();
   }
 
   iniciar().catch(e => {

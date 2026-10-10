@@ -54,3 +54,17 @@ código:* `Rol::Recorredor`.
 
 **Administrador** — Quien carga campos y potreros, revisa las recorridas y
 administra los usuarios.
+
+## 4. La app de campo
+
+**Subir** (o **sincronizar**) — Mandar una recorrida del celular al panel.
+Se puede repetir sin duplicar nada (P4). *En el código:* `SincronizadorRecorridas`,
+`Sincro` en la app.
+
+**Cola de subida** — Las recorridas guardadas en el celular que el panel
+todavía no tiene en su última versión. Cada una está **pendiente**, **en el
+panel** o **rechazada** (el panel no la aceptó y dice por qué).
+
+**Ingreso** — Entrar a la app con el usuario y la contraseña del panel. Deja
+un **token** guardado en el celular para subir sin volver a escribir la
+contraseña (P10). *Evitar:* login (en pantalla).
