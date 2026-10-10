@@ -16,7 +16,7 @@ class PotreroFactory extends Factory
         return [
             'campo_id' => Campo::factory(),
             'nombre' => 'Potrero '.fake()->unique()->numberBetween(1, 9999),
-            'tipo_pastura' => fake()->randomElement(['Alfalfa', 'Festuca', 'Raigrás', 'Verdeo de avena', null]),
+            'tipo_pastura_id' => null,
             'contorno' => null,
             'observaciones' => null,
             'activo' => true,

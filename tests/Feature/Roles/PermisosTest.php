@@ -46,6 +46,7 @@ class PermisosTest extends TestCase
         $esperado = [
             'tablero' => Nivel::Ver, 'campos' => Nivel::Ver,
             'recorridas' => Nivel::Editar, 'usuarios' => Nivel::SinAcceso,
+            'configuracion' => Nivel::SinAcceso,
         ];
 
         $this->assertSame($esperado, $recorredor->niveles());

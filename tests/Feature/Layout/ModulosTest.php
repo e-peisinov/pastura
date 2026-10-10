@@ -68,39 +68,38 @@ class ModulosTest extends TestCase
             $this->assertStringStartsWith('fa-', $modulo->icono);
         }
 
-        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios'], Modulos::nombres());
+        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios', 'configuracion'], Modulos::nombres());
         $this->assertSame($this->nombres($todos), Modulos::nombres());
         $this->assertSame('usuarios', Modulos::porNombre('usuarios')?->nombre);
         $this->assertSame('admin.usuarios', Modulos::porNombre('usuarios')->ruta);
 
-        // Los cuatro ya tienen ruta: el administrador los ve todos.
+        // Todos ya tienen ruta: el administrador los ve todos.
         $admin = User::factory()->admin()->create();
-        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios'], $this->nombres(Modulos::visibles($admin)));
+        $this->assertSame(['tablero', 'campos', 'recorridas', 'usuarios', 'configuracion'], $this->nombres(Modulos::visibles($admin)));
         $this->assertNull(Modulos::porNombre('inexistente'));
     }
 
-    public function test_el_recorredor_nace_sin_acceso_solo_a_usuarios(): void
+    public function test_el_recorredor_nace_sin_acceso_a_usuarios_y_configuracion(): void
     {
         $sinAcceso = collect(Modulos::todos())
             ->filter(fn (Modulo $m) => $m->porOmision(Rol::Recorredor) === Nivel::SinAcceso)
             ->pluck('nombre')->all();
 
-        $this->assertEqualsCanonicalizing(['usuarios'], $sinAcceso);
+        $this->assertEqualsCanonicalizing(['usuarios', 'configuracion'], $sinAcceso);
 
         foreach (Modulos::todos() as $modulo) {
             $this->assertSame(Nivel::Editar, $modulo->porOmision(Rol::Admin));
         }
     }
 
-    public function test_reportes_y_configuracion_estan_anunciados_y_fuera_de_la_lista_de_modulos(): void
+    public function test_reportes_esta_anunciado_y_fuera_de_la_lista_de_modulos(): void
     {
         // D66: se ven en el sidebar apagados, pero no existen para permisos,
         // atajos ni la matriz de usuarios.
         $anunciados = Modulos::anunciados();
 
-        $this->assertSame(['reportes', 'configuracion'], $this->nombres($anunciados));
+        $this->assertSame(['reportes'], $this->nombres($anunciados));
         $this->assertSame('Reportes: próximamente', $anunciados[0]->titulo());
-        $this->assertSame('Configuración: próximamente', $anunciados[1]->titulo());
 
         foreach ($anunciados as $anunciado) {
             $this->assertTrue($anunciado->anunciado);
@@ -118,10 +117,10 @@ class ModulosTest extends TestCase
 
         $respuesta->assertSee('data-anunciado', false);
         $respuesta->assertSee('Reportes');
-        $respuesta->assertSee('Configuración');
         $respuesta->assertSee('Próximamente');
         $respuesta->assertDontSee('href="'.url('/reportes').'"', false);
-        $respuesta->assertDontSee('href="'.url('/configuracion').'"', false);
+        // Configuración ya es un módulo (P17): el recorredor nace sin acceso y no la ve.
+        $respuesta->assertDontSee('Configuración');
     }
 
     public function test_el_modulo_esta_activo_en_su_ruta_y_en_las_hijas(): void

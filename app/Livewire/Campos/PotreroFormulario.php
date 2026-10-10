@@ -6,7 +6,9 @@ use App\Livewire\Traits\ConfirmaDescarte;
 use App\Livewire\Traits\EnviaToasts;
 use App\Models\Campo;
 use App\Models\Potrero;
+use App\Models\TipoPastura;
 use App\Support\Geo\Superficie;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -29,7 +31,8 @@ class PotreroFormulario extends Component
 
     public string $nombre = '';
 
-    public ?string $tipo_pastura = null;
+    /** El tipo de pastura (P16): uno activo, o el que el potrero ya tenía. */
+    public ?int $tipo_pastura_id = null;
 
     public ?string $observaciones = null;
 
@@ -48,7 +51,7 @@ class PotreroFormulario extends Component
 
             $this->potreroId = $potrero->id;
             $this->nombre = $potrero->nombre;
-            $this->tipo_pastura = $potrero->tipo_pastura;
+            $this->tipo_pastura_id = $potrero->tipo_pastura_id;
             $this->observaciones = $potrero->observaciones;
             $this->contorno = $potrero->contorno;
         }
@@ -65,7 +68,7 @@ class PotreroFormulario extends Component
                 'required', 'string', 'max:100',
                 Rule::unique('potreros', 'nombre')->where('campo_id', $this->campoId)->ignore($this->potreroId),
             ],
-            'tipo_pastura' => ['nullable', 'string', 'max:100'],
+            'tipo_pastura_id' => ['nullable', 'integer', Rule::in($this->tiposElegibles()->modelKeys())],
             'observaciones' => ['nullable', 'string', 'max:2000'],
             'contorno' => ['nullable', 'array'],
         ], [
@@ -78,7 +81,7 @@ class PotreroFormulario extends Component
             return;
         }
 
-        foreach (['nombre', 'tipo_pastura', 'observaciones'] as $campo) {
+        foreach (['nombre', 'observaciones'] as $campo) {
             $datos[$campo] = is_string($datos[$campo]) && trim($datos[$campo]) !== '' ? trim($datos[$campo]) : null;
         }
         $datos['nombre'] ??= '';
@@ -100,12 +103,30 @@ class PotreroFormulario extends Component
     /** @return list<string> */
     protected function camposFormulario(): array
     {
-        return ['nombre', 'tipo_pastura', 'observaciones', 'contorno'];
+        return ['nombre', 'tipo_pastura_id', 'observaciones', 'contorno'];
     }
 
     public function cerrarFormulario(): void
     {
         $this->dispatch('cerrar-potrero-formulario');
+    }
+
+    /**
+     * Lo que ofrece el combo: los tipos activos más el que el potrero ya
+     * tenía, aunque esté desactivado (se conserva, P16).
+     *
+     * @return Collection<int, TipoPastura>
+     */
+    private function tiposElegibles(): Collection
+    {
+        $actual = $this->potreroId !== null
+            ? Potrero::query()->whereKey($this->potreroId)->value('tipo_pastura_id')
+            : null;
+
+        return TipoPastura::query()
+            ->where(fn ($q) => $q->where('activo', true)->when($actual !== null, fn ($q) => $q->orWhere('id', $actual)))
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
     }
 
     public function render()
@@ -121,6 +142,7 @@ class PotreroFormulario extends Component
 
         return view('livewire.campos.potrero-formulario', [
             'vecinos' => $vecinos,
+            'tipos' => $this->tiposElegibles(),
             'zDescarte' => min($this->z + 10, 70),
         ]);
     }

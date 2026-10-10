@@ -7,8 +7,8 @@
             <x-ui.campo :etiqueta="__('campos.potrero.campos.nombre')" nombre="nombre" obligatorio>
                 <x-ui.input nombre="nombre" wire:model="nombre" maxlength="100" autofocus autocomplete="off" />
             </x-ui.campo>
-            <x-ui.campo :etiqueta="__('campos.potrero.campos.tipo_pastura')" nombre="tipo_pastura" :ayuda="__('campos.potrero.ayuda_tipo_pastura')">
-                <x-ui.input nombre="tipo_pastura" wire:model="tipo_pastura" maxlength="100" autocomplete="off" />
+            <x-ui.campo :etiqueta="__('campos.potrero.campos.tipo_pastura')" nombre="tipo_pastura_id" :ayuda="__('campos.potrero.ayuda_tipo_pastura')">
+                <x-ui.combobox wire:model="tipo_pastura_id" :opciones="$tipos" :placeholder="__('campos.potrero.sin_tipo_pastura')" />
             </x-ui.campo>
 
             {{-- Contorno: el mapa lo edita en el navegador y lo devuelve por entangle --}}

@@ -20,7 +20,7 @@ class Potrero extends Model
     protected $fillable = [
         'campo_id',
         'nombre',
-        'tipo_pastura',
+        'tipo_pastura_id',
         'contorno',
         'observaciones',
         'activo',
@@ -41,6 +41,11 @@ class Potrero extends Model
     public function campo(): BelongsTo
     {
         return $this->belongsTo(Campo::class);
+    }
+
+    public function tipoPastura(): BelongsTo
+    {
+        return $this->belongsTo(TipoPastura::class);
     }
 
     public function recorridas(): HasMany

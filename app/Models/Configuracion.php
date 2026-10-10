@@ -7,12 +7,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Fila única con la identidad de la organización (marca blanca, D8).
- * Por ahora sin pantalla: se carga por seeder.
+ * Fila única con la identidad de la organización (marca blanca, D8) y los
+ * parámetros del seguimiento (P17). Se edita en /configuracion.
  */
 class Configuracion extends Model
 {
     use HasFactory;
+
+    /** Valores con los que arranca una instalación (P17). */
+    public const DIAS_SIN_MEDIR = 7;
+
+    public const PUNTOS_MINIMOS = 20;
 
     protected $table = 'configuracion';
 
@@ -20,12 +25,16 @@ class Configuracion extends Model
         'nombre',
         'logo_path',
         'color_acento',
+        'dias_sin_medir',
+        'puntos_minimos',
     ];
 
     protected function casts(): array
     {
         return [
             'color_acento' => ColorAcento::class,
+            'dias_sin_medir' => 'integer',
+            'puntos_minimos' => 'integer',
         ];
     }
 
@@ -38,6 +47,8 @@ class Configuracion extends Model
         return static::query()->first() ?? new static([
             'nombre' => 'Pasturómetro',
             'color_acento' => ColorAcento::Green,
+            'dias_sin_medir' => self::DIAS_SIN_MEDIR,
+            'puntos_minimos' => self::PUNTOS_MINIMOS,
         ]);
     }
 }

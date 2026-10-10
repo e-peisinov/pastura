@@ -3,6 +3,7 @@
 use App\Http\Controllers\PaseAlPanelController;
 use App\Livewire\Actions\Logout;
 use App\Livewire\Campos\Campos;
+use App\Livewire\Configuracion\Configuracion;
 use App\Livewire\Recorridas\Recorridas;
 use App\Livewire\Tablero\Tablero;
 use App\Livewire\Usuarios\Usuarios;
@@ -25,6 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('recorridas', Recorridas::class)->name('recorridas')->middleware('modulo:recorridas');
     // Usuarios (D49): alta, contraseña, baja lógica y la matriz de permisos de cada uno.
     Route::get('admin/usuarios', Usuarios::class)->name('admin.usuarios')->middleware('modulo:usuarios');
+    // Configuración (P17): la organización, los tipos de pastura (P16) y los parámetros del seguimiento.
+    Route::get('configuracion', Configuracion::class)->name('configuracion')->middleware('modulo:configuracion');
 });
 
 Route::middleware('auth')->group(function () {

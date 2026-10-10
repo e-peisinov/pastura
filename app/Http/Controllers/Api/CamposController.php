@@ -18,7 +18,7 @@ class CamposController extends Controller
     {
         $campos = Campo::where('activo', true)
             ->whereHas('potreros', fn ($potreros) => $potreros->where('activo', true))
-            ->with(['potreros' => fn ($potreros) => $potreros->where('activo', true)->orderBy('nombre')])
+            ->with(['potreros' => fn ($potreros) => $potreros->where('activo', true)->orderBy('nombre'), 'potreros.tipoPastura'])
             ->orderBy('nombre')
             ->get();
 
@@ -31,7 +31,7 @@ class CamposController extends Controller
                 'potreros' => $campo->potreros->map(fn (Potrero $potrero) => [
                     'id' => $potrero->id,
                     'nombre' => $potrero->nombre,
-                    'tipo_pastura' => $potrero->tipo_pastura,
+                    'tipo_pastura' => $potrero->tipoPastura?->nombre,
                     'superficie_ha' => ($ha = $potrero->superficieHa()) === null ? null : round($ha, 2),
                     'contorno' => $potrero->contorno,
                 ])->values(),

@@ -37,6 +37,7 @@ ve solo las suyas.
 **P7 — 2026-10-10 — Configuración sin pantalla.** La marca blanca (nombre,
 logo, color) usa la tabla `configuracion` del kit, cargada por seeder. La
 pantalla de Configuración queda anunciada en el sidebar para más adelante.
+*Reemplazada por P17.*
 
 **P8 — 2026-10-10 — El CSV de recorridas va una fila por punto.** Sale en el
 formato del exportador del origen (UTF-8 con BOM, `;`, coma decimal) e incluye
@@ -132,3 +133,56 @@ está activo **y** la página está guardada en la caché, y mientras no lo est�
 el inicio muestra un aviso: "Preparando…" la primera vez, o que hay que
 abrirla con señal antes de salir al campo. Si falta, se reintenta al volver
 la señal.
+
+**P16 — 2026-10-10 — Tipos de pastura con sus alturas de referencia y su
+fórmula de kg MS/ha, configurables en el panel.** `tipo_pastura` deja de ser
+texto libre: es una tabla (`tipos_pastura`) que se administra en
+Configuración, y cada potrero apunta a uno. Cada tipo tiene su **altura de
+ingreso** (desde ahí el potrero está listo para pastorear), su **altura de
+salida** (el remanente: debajo de eso no se sigue comiendo) y su **fórmula de
+kg MS/ha** (`A × altura + B`). Las dos alturas van juntas o ninguna, y la de
+ingreso es mayor que la de salida; la fórmula, igual: A y B juntos o
+ninguno. La fórmula estaba en los ajustes de cada celular, así que dos
+recorredores podían medir con fórmulas distintas y los kg MS/ha del panel no
+se podían comparar ni sumar. Desde ahora el panel calcula los kg MS/ha de
+cada punto desde su altura con la fórmula **vigente** del tipo de pastura
+del potrero, al leer (regla 8): cambiar la fórmula recalcula la historia,
+que es lo que permite comparar un potrero consigo mismo en el tiempo. Lo que
+guarda `mediciones.kg_ms_ha` queda como lo que vio el recorredor en el
+celular. La app baja la fórmula con los campos y deja de pedirla en sus
+ajustes. La migración convierte los textos que ya había en tipos (sin
+alturas ni fórmula) sin perder ninguno.
+
+**P17 — 2026-10-10 — Configuración con pantalla (reemplaza P7).** Tres
+bloques, cada uno con su modal: los datos de la organización (nombre, logo y
+color; el módulo 31 del kit sin datos fiscales ni métodos de pago), los
+tipos de pastura (P16) y los **parámetros** del seguimiento: cuántos días
+pasan para que un potrero quede **sin medir** (7 al instalar) y cuántos
+puntos como mínimo tiene que tener una recorrida para no quedar **para
+revisar** (20 al instalar). Es un módulo de la matriz (`configuracion`): el
+administrador nace con Editar y el recorredor sin acceso.
+
+**P18 — 2026-10-10 — Alcance de tablero, reportes y auditoría.** Se cerró
+con el usuario antes de construirlos:
+- **Los recorredores trabajan en todos los campos**: no hay asignación de
+  campos ni de potreros a un recorredor.
+- **Recorrida para revisar**: una recorrida activa con menos puntos activos
+  que el mínimo de P17, con algún punto activo sin GPS o con algún punto
+  activo fuera del contorno de su potrero.
+- **No se registran pastoreos** (entrada y salida de animales) por ahora: una
+  caída de altura entre dos recorridas se muestra como tal, sin explicarla.
+- **Tablero**: el administrador ve el estado de los potreros (listos, en
+  crecimiento, bajo el remanente, sin medir, nunca medidos), las últimas
+  recorridas y las recorridas para revisar; el recorredor ve sus recorridas y
+  los potreros para medir. La cola de subida vive en el celular y el panel
+  no la ve.
+- **Reportes**: con CSV y PDF (se instala dompdf y la plantilla del kit).
+  El recorredor nace sin acceso.
+- **Auditoría** de lo sensible, no de todo: anular y reactivar una
+  recorrida, descartar y restaurar un punto, mover una recorrida de potrero;
+  cambiar el contorno, desactivar o borrar un potrero o un campo; cambiar el
+  rol, los permisos, la contraseña (hecha por el administrador) o desactivar
+  un usuario; cambiar los tipos de pastura o los parámetros. Ni los ingresos
+  ni las subidas: es ruido para lo que cuenta.
+- **Orden**: Configuración → kg MS/ha calculados en el panel (API y app) →
+  Tablero → Auditoría → Reportes, un commit por etapa.

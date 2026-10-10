@@ -15,12 +15,13 @@ las recorridas que sube la app y las muestra en tablas y en el mapa.
 ## Modelo de datos
 
 ```
+tipos_pastura 1──* potreros
 campos 1──* potreros 1──* recorridas 1──* mediciones
                           *
                           │
 users 1───────────────────┘   (quién hizo la recorrida)
 users 1──* permisos           (matriz por módulo, D49)
-configuracion                 (fila única: nombre, logo, color)
+configuracion                 (fila única: nombre, logo, color, parámetros)
 ```
 
 ### campos
@@ -41,7 +42,7 @@ borra (con sus potreros); con historia se desactiva.
 |---|---|---|
 | `campo_id` | FK campos, restrict | |
 | `nombre` | string(100) | Único dentro del campo. |
-| `tipo_pastura` | string(100), null | Texto libre en la v1 (alfalfa, festuca, verdeo...). |
+| `tipo_pastura_id` | FK tipos_pastura, null, restrict | El tipo de pastura (P16). |
 | `contorno` | json, null | Geometría GeoJSON (`Polygon` o `MultiPolygon`, lon/lat WGS84). |
 | `observaciones` | text, null | |
 | `activo` | bool | Baja lógica. |
@@ -49,6 +50,27 @@ borra (con sus potreros); con historia se desactiva.
 - La **superficie** se calcula del contorno (área geodésica, en hectáreas), no
   se guarda (regla 8). Sin contorno, no hay superficie.
 - Un potrero **tiene historia** si tiene recorridas.
+
+### tipos_pastura
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `nombre` | string(100) | Único. |
+| `altura_ingreso_cm` | decimal(5,1), null | Listo para pastorear desde acá. |
+| `altura_salida_cm` | decimal(5,1), null | El remanente. Las dos alturas van juntas o ninguna; ingreso > salida. |
+| `biomasa_a` | decimal(8,3), null | kg MS/ha por cm de altura. |
+| `biomasa_b` | decimal(8,1), null | kg MS/ha a altura cero (puede ser negativo). A y B van juntos o ninguno. |
+| `activo` | bool | Baja lógica: con potreros se desactiva, sin potreros se borra. |
+
+Los kg MS/ha de un punto son `max(0, A × altura + B)` con la fórmula vigente
+del tipo de pastura de su potrero (P16). Sin tipo o sin fórmula, no hay kg
+MS/ha.
+
+### configuracion
+
+Fila única (marca blanca, D8): `nombre`, `logo_path`, `color_acento`, y los
+parámetros del seguimiento (P17): `dias_sin_medir` (7 al instalar) y
+`puntos_minimos` (20 al instalar).
 
 ### recorridas
 
@@ -104,6 +126,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Campos | Editar | Ver |
 | Recorridas | Editar | Editar (solo las suyas) |
 | Usuarios | Editar | Sin acceso |
+| Configuración | Editar | Sin acceso |
 
 ## Alcance
 
@@ -116,4 +139,6 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Recorridas (listado, detalle con mapa de puntos, anular, descartar puntos, CSV) | Hecha |
 | API de sincronización + login en la app de campo (P9 a P11) | Hecha |
 | Inicio de la app: hacer una recorrida o ir al panel sin volver a ingresar (P12) | Hecha |
-| Reportes, configuración, auditoría | Más adelante |
+| Configuración: organización, tipos de pastura, parámetros (P16, P17) | Hecha |
+| kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Más adelante |
+| Reportes, auditoría (P18) | Más adelante |

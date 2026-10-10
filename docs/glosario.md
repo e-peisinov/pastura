@@ -27,6 +27,11 @@ pastura. *Evitar:* lote, parcela.
 **Contorno** — El polígono del potrero en el mapa. Se dibuja o se importa de un
 KML/KMZ de Google Earth.
 
+**Tipo de pastura** — La pastura que tiene un potrero (alfalfa, festuca,
+verdeo de avena...), con sus alturas de referencia y su fórmula de kg MS/ha
+(P16). Se administra en Configuración. *En el código:* `tipos_pastura`,
+`TipoPastura`. *Evitar:* especie, cultivo.
+
 ## 2. La medición
 
 **Pasturómetro** — El caño con el disco que se apoya sobre la pastura; el disco
@@ -45,9 +50,36 @@ hora. Pertenece a una recorrida. *En el código:* `mediciones`.
 del tamaño de los marcadores a centímetros. Cada medición guarda una copia.
 
 **kg MS/ha** — Kilos de materia seca por hectárea: la biomasa estimada a partir
-de la altura con una fórmula `A × altura + B`.
+de la altura con la fórmula `A × altura + B` del tipo de pastura del potrero.
+La calcula el panel con la fórmula vigente (P16).
 
-## 3. Las personas
+## 3. El seguimiento
+
+**Altura de ingreso** — La altura desde la que un potrero está **listo para
+pastorear**. Es del tipo de pastura.
+
+**Altura de salida** (o **remanente**) — La altura debajo de la cual no se
+sigue comiendo un potrero. Un potrero medido por debajo está **bajo el
+remanente**. Es del tipo de pastura. *Evitar:* altura de corte.
+
+**En crecimiento** — Un potrero cuya última altura medida está entre la de
+salida y la de ingreso.
+
+**Sin medir** — Un potrero activo cuya última recorrida activa tiene más días
+que los que dice Configuración (P17). Uno que no tiene ninguna está **nunca
+medido**.
+
+**Recorrida para revisar** — Una recorrida con menos puntos que el mínimo, con
+puntos sin GPS o con puntos fuera del contorno del potrero (P18). No es un
+estado guardado: se calcula.
+
+**Tasa de crecimiento** — Lo que creció un potrero por día entre dos
+recorridas seguidas, en cm/día o en kg MS/ha/día.
+
+**Disponibilidad forrajera** — Los kg de materia seca que hay en un potrero
+o en un campo: kg MS/ha × hectáreas. Se calcula, no se guarda.
+
+## 4. Las personas
 
 **Recorredor** — Quien sale al campo con la app y hace las recorridas. *En el
 código:* `Rol::Recorredor`.
@@ -55,7 +87,7 @@ código:* `Rol::Recorredor`.
 **Administrador** — Quien carga campos y potreros, revisa las recorridas y
 administra los usuarios.
 
-## 4. La app de campo
+## 5. La app de campo
 
 **Subir** (o **sincronizar**) — Mandar una recorrida del celular al panel.
 Se puede repetir sin duplicar nada (P4). *En el código:* `SincronizadorRecorridas`,

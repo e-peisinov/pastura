@@ -262,7 +262,7 @@ class Campos extends Component
             : $this->aplicarOrden($this->consultaFiltrada())->paginate($this->perPage);
 
         $detalle = $this->detalleId !== null
-            ? Campo::query()->with(['potreros' => fn ($q) => $q->orderByDesc('activo')->orderBy('nombre')])->find($this->detalleId)
+            ? Campo::query()->with(['potreros' => fn ($q) => $q->orderByDesc('activo')->orderBy('nombre'), 'potreros.tipoPastura'])->find($this->detalleId)
             : null;
 
         // La última recorrida activa de cada potrero de la ficha, con su resumen (regla 8).

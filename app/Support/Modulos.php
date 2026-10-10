@@ -29,6 +29,7 @@ final class Modulos
             new Modulo('campos', 'campos', 'fa-map-location-dot', tecla: 'c'),
             new Modulo('recorridas', 'recorridas', 'fa-route', Nivel::Editar, tecla: 'r'),
             new Modulo('usuarios', 'admin.usuarios', 'fa-user-gear', Nivel::SinAcceso, tecla: 'u'),
+            new Modulo('configuracion', 'configuracion', 'fa-gear', Nivel::SinAcceso, tecla: 'g'),
         ];
     }
 
@@ -45,7 +46,6 @@ final class Modulos
     {
         return [
             new Modulo('reportes', 'reportes', 'fa-chart-column', anunciado: true),
-            new Modulo('configuracion', 'configuracion', 'fa-gear', anunciado: true),
         ];
     }
 

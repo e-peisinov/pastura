@@ -10,6 +10,7 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -123,6 +124,7 @@ class CamposTest extends TestCase
     public function test_alta_de_un_potrero_con_contorno_desde_la_ficha(): void
     {
         $campo = Campo::factory()->create();
+        $alfalfa = TipoPastura::factory()->create(['nombre' => 'Alfalfa']);
 
         Livewire::actingAs($this->admin)->test(Campos::class)
             ->call('verDetalle', $campo->id)
@@ -132,15 +134,42 @@ class CamposTest extends TestCase
 
         Livewire::actingAs($this->admin)->test(PotreroFormulario::class, ['campoId' => $campo->id])
             ->set('nombre', 'Lote 4')
-            ->set('tipo_pastura', 'Alfalfa')
+            ->set('tipo_pastura_id', $alfalfa->id)
             ->set('contorno', self::CUADRADO)
             ->call('guardar')
             ->assertHasNoErrors()
             ->assertDispatched('potrero-guardado');
 
         $potrero = Potrero::query()->where('campo_id', $campo->id)->sole();
-        $this->assertSame('Alfalfa', $potrero->tipo_pastura);
+        $this->assertSame($alfalfa->id, $potrero->tipo_pastura_id);
         $this->assertEqualsWithDelta(103.79, $potrero->superficieHa(), 0.05);
+    }
+
+    public function test_el_tipo_de_pastura_se_elige_entre_los_activos_y_se_conserva_uno_desactivado(): void
+    {
+        $campo = Campo::factory()->create();
+        TipoPastura::factory()->create(['nombre' => 'Alfalfa']);
+        $sorgo = TipoPastura::factory()->inactivo()->create(['nombre' => 'Sorgo']);
+        $potrero = Potrero::factory()->for($campo)->create(['tipo_pastura_id' => $sorgo->id]);
+
+        // Nuevo: el desactivado no se ofrece ni se acepta.
+        Livewire::actingAs($this->admin)->test(PotreroFormulario::class, ['campoId' => $campo->id])
+            ->assertSee('Alfalfa')->assertDontSee('Sorgo')
+            ->set('nombre', 'Lote 9')
+            ->set('tipo_pastura_id', $sorgo->id)
+            ->call('guardar')
+            ->assertHasErrors(['tipo_pastura_id']);
+
+        // El que ya lo tenía lo conserva al guardar otra cosa.
+        Livewire::actingAs($this->admin)->test(PotreroFormulario::class, ['campoId' => $campo->id, 'potreroId' => $potrero->id])
+            ->assertSet('tipo_pastura_id', $sorgo->id)
+            ->assertSee('Sorgo')
+            ->set('observaciones', 'Resembrado')
+            ->call('guardar')
+            ->assertHasNoErrors();
+
+        $this->assertSame($sorgo->id, $potrero->fresh()->tipo_pastura_id);
+        $this->assertSame('Sorgo', $potrero->fresh()->tipoPastura->nombre);
     }
 
     public function test_el_nombre_del_potrero_es_unico_dentro_del_campo(): void

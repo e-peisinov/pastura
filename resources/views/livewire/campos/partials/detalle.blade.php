@@ -67,7 +67,7 @@
                             @endif
                         </p>
                         <p class="text-xs text-gray-500">
-                            {{ $potrero->tipo_pastura ?? '—' }}
+                            {{ $potrero->tipoPastura?->nombre ?? '—' }}
                             · {{ $ha === null ? __('campos.sin_superficie') : __('campos.hectareas', ['valor' => Formato::numero($ha, 1)]) }}
                         </p>
                     </div>

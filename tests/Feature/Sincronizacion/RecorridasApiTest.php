@@ -7,6 +7,7 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -34,7 +35,7 @@ class RecorridasApiTest extends TestCase
         $this->juan = User::factory()->create(['name' => 'Juan Pérez']);
         $this->lote4 = Potrero::factory()->conContorno()
             ->for(Campo::factory()->create(['nombre' => 'La Esperanza', 'localidad' => 'Río Cuarto']))
-            ->create(['nombre' => 'Lote 4', 'tipo_pastura' => 'Alfalfa']);
+            ->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => TipoPastura::factory()->create(['nombre' => 'Alfalfa'])->id]);
     }
 
     private function cuerpo(?array $mediciones = null, array $extra = []): array
