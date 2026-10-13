@@ -75,8 +75,8 @@ las curvas de biomasa de cada potrero (P23).
 | `nombre` | string(100) | Único (sin distinguir mayúsculas). |
 | `activo` | bool | Baja lógica: con curvas o recorridas se desactiva, sin nada se borra. |
 
-El estado de la pastura cuando se mide (P23). Se administra en
-Configuración; arranca con *Recién pastoreada*, *Rebrote* y *Pleno
+El estado de la pastura cuando se mide (P23). Se administra en la
+pantalla de Curvas (P24); arranca con *Recién pastoreada*, *Rebrote* y *Pleno
 crecimiento* (`EstadosFenologicosSeeder`). La app los ofrece en el orden en
 que se cargaron.
 
@@ -113,7 +113,8 @@ que se cargaron.
 Fila única (marca blanca, D8): `nombre`, `logo_path`, `color_acento`, los
 parámetros del seguimiento (P17): `dias_sin_medir` (7 al instalar) y
 `puntos_minimos` (20 al instalar), y el **área del disco** `area_disco_m2`
-(0,10 al instalar, P23): lo que corta cada muestra de una curva.
+(0,10 al instalar, P23): lo que corta cada muestra de una curva. El área se
+edita en la pantalla de Curvas (P24), no en Configuración.
 
 ### auditoria
 
@@ -201,3 +202,4 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Modo curva en la app (medir los puntos de corte y numerar las bolsas) | Pendiente |
 | Auditoría de lo sensible (P18, P20) | Hecha |
 | Reportes con CSV y PDF (P18, P21) | Hecha |
+| Estados de la pastura y área del disco en Curvas (P24) | Hecha |

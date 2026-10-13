@@ -1,5 +1,9 @@
 @php
     use App\Support\Formato;
+    use App\Support\Biomasa\RectaBiomasa;
+    use App\Support\Tema;
+
+    $areaTexto = rtrim(rtrim(Formato::numero($area, 4), '0'), ',');
 
     // Lo que comparten tabla y cards se calcula una sola vez (§5).
     $offset = ($curvas->currentPage() - 1) * $curvas->perPage();
@@ -126,7 +130,37 @@
                              :offset="$offset" :per-page="$curvas->perPage()" :total-records="$curvas->total()"
                              class="rounded-b-lg" />
         </div>
+
+        {{-- Lo que usan las curvas (P24): los estados de la pastura y el área del disco --}}
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
+            <div class="min-w-0 lg:col-span-2">
+                <livewire:curvas.estados-fenologicos />
+            </div>
+
+            <section class="bg-white border border-gray-200 rounded-lg" data-bloque-area-disco>
+                <header class="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-200">
+                    <div>
+                        <h2 class="flex items-center gap-2 font-semibold text-gray-800">
+                            <i class="fa-solid fa-circle-dot {{ Tema::acentoTexto() }}" aria-hidden="true"></i>
+                            {{ __('curvas.area_disco.titulo') }}
+                        </h2>
+                        <p class="text-sm text-gray-500">{{ __('curvas.area_disco.intro') }}</p>
+                    </div>
+                    @if($puedeEditar)
+                        <x-ui.boton variante="secundario" icono="fa-pen" wire:click="abrirAreaDisco" class="shrink-0">{{ __('ui.acciones.editar') }}</x-ui.boton>
+                    @endif
+                </header>
+                <div class="p-4 text-sm">
+                    <p class="text-2xl font-semibold text-gray-800 tabular-nums" data-area-disco>{{ __('curvas.area_disco.metros', ['valor' => $areaTexto]) }}</p>
+                    <p class="mt-1 text-gray-500">{{ __('curvas.area_disco.equivalencia', ['kg' => Formato::numero(RectaBiomasa::kgMsHaDeMuestra(1, $area))]) }}</p>
+                </div>
+            </section>
+        </div>
     </x-ui.pagina>
+
+    @if($mostrarAreaDisco)
+        <livewire:curvas.area-disco :key="'area-disco'" />
+    @endif
 
     @include('livewire.curvas.partials.detalle')
 

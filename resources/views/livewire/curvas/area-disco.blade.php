@@ -1,10 +1,8 @@
-{{-- Alta / edición de un estado de la pastura (P23). Hijo de Configuración. --}}
+{{-- Área del disco (P23): modal hijo de Curvas (P24). --}}
 <div>
-    <x-ui.modal :titulo="$estadoId === null ? __('configuracion.estados.nuevo') : __('configuracion.estados.modificar')"
-                :icono="$estadoId === null ? 'fa-plus' : 'fa-pen'"
-                cerrar="intentarCerrar" ancho="md" submit="guardar" data-formulario-estado>
-        <x-ui.campo :etiqueta="__('configuracion.estados.campos.nombre')" nombre="nombre" obligatorio :ayuda="__('configuracion.estados.ayuda_nombre')">
-            <x-ui.input nombre="nombre" wire:model="nombre" maxlength="100" autofocus autocomplete="off" />
+    <x-ui.modal :titulo="__('curvas.area_disco.modificar')" icono="fa-circle-dot" cerrar="intentarCerrar" ancho="md" submit="guardar" data-formulario-area-disco>
+        <x-ui.campo :etiqueta="__('curvas.area_disco.campo')" nombre="area_disco_m2" obligatorio :ayuda="__('curvas.area_disco.ayuda')">
+            <x-ui.input nombre="area_disco_m2" wire:model="area_disco_m2" inputmode="decimal" autocomplete="off" autofocus />
         </x-ui.campo>
 
         <x-slot:footer>

@@ -39,7 +39,7 @@ esos son de las curvas de biomasa (P23). Se administra en Configuración.
 cuando se mide: recién pastoreada, rebrote, pleno crecimiento... La misma
 altura no pesa lo mismo en cada uno, porque cambia cómo se comprime bajo el
 disco. El recorredor lo elige al empezar la recorrida. Se administra en
-Configuración. *En el código:* `estados_fenologicos`, `EstadoFenologico`.
+Curvas (P24). *En el código:* `estados_fenologicos`, `EstadoFenologico`.
 *Evitar:* "estado" solo, etapa.
 
 ## 2. La medición
@@ -75,8 +75,8 @@ cortado justo debajo. *En el código:* `muestras_curva`, `MuestraCurva`.
 *No es* una medición: la medición es de una recorrida y no se corta nada.
 
 **Área del disco** — Lo que corta una muestra, en m² (0,10 al instalar).
-Pasa los gramos a kg MS/ha: con 0,10 m², gramos × 100. Es un parámetro de
-Configuración.
+Pasa los gramos a kg MS/ha: con 0,10 m², gramos × 100. Se edita en Curvas
+(P24).
 
 **kg MS/ha** — Kilos de materia seca por hectárea: la biomasa estimada a partir
 de la altura con la recta de la curva de biomasa vigente del potrero para el

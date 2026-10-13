@@ -84,4 +84,48 @@ return [
         'eliminada' => 'Curva eliminada.',
         'vigente' => 'La curva vuelve a ser la vigente para ese potrero y ese estado.',
     ],
+
+    // Estados de la pastura (P23; acá desde P24): cada potrero tiene una curva por estado.
+    'estados' => [
+        'titulo' => 'Estados de la pastura',
+        'intro' => 'El recorredor elige uno al empezar la recorrida y cada potrero tiene una curva de biomasa por estado: la misma altura no pesa lo mismo recién pastoreada que en plena primavera.',
+        'nuevo' => 'Nuevo estado',
+        'modificar' => 'Modificar estado de la pastura',
+        'columnas' => [
+            'nombre' => 'Estado',
+            'uso' => 'Uso',
+            'estado' => 'Activo',
+        ],
+        'uso' => ':curvas · :recorridas',
+        'curvas' => '{0} Sin curvas|{1} 1 curva|[2,*] :count curvas',
+        'recorridas' => '{0} sin recorridas|{1} 1 recorrida|[2,*] :count recorridas',
+        'sin_registros' => 'No hay estados cargados. Sin estados, la app no pregunta cómo está la pastura y no hay kg MS/ha.',
+        'campos' => [
+            'nombre' => 'Nombre',
+        ],
+        'ayuda_nombre' => 'Por ejemplo: recién pastoreada, rebrote, pleno crecimiento.',
+        'confirmar_eliminar' => '¿Eliminar el estado ":nombre"? No lo usa ninguna curva ni recorrida, así que se borra en el momento.',
+        'confirmar_desactivar' => 'El estado ":nombre" lo usan curvas o recorridas: se desactiva y la app deja de ofrecerlo, pero lo que ya lo tiene lo conserva.',
+        'toasts' => [
+            'creado' => 'Estado de la pastura creado.',
+            'modificado' => 'Estado de la pastura modificado.',
+            'eliminado' => 'Estado de la pastura eliminado.',
+            'desactivado' => 'El estado lo usan curvas o recorridas: se desactivó en vez de eliminarse.',
+            'reactivado' => 'Estado de la pastura reactivado.',
+        ],
+    ],
+
+    // Área del disco (P23; acá desde P24): pasa los gramos de cada muestra a kg MS/ha.
+    'area_disco' => [
+        'titulo' => 'Área del disco',
+        'intro' => 'Lo que corta cada muestra de una curva.',
+        'modificar' => 'Modificar el área del disco',
+        'campo' => 'Área del disco (m²)',
+        'ayuda' => 'La superficie del pasto que se corta bajo el disco en cada muestra. Con 0,1 m², cada gramo seco son 100 kg MS/ha. Cambiarla recalcula los kilos de todas las curvas.',
+        'metros' => ':valor m²',
+        'equivalencia' => 'Cada gramo seco son :kg kg MS/ha.',
+        'toasts' => [
+            'guardada' => 'Área del disco guardada.',
+        ],
+    ],
 ];

@@ -24,8 +24,9 @@ use Livewire\WithPagination;
  * viajan en la URL, así la ficha del campo puede abrir las de un potrero.
  *
  * La ficha (gráfico y muestras) es un modal de acá; el alta y la edición van
- * en el hijo CurvaFormulario (D57). Con Ver se consulta; cada acción pide
- * Editar en Curvas.
+ * en el hijo CurvaFormulario (D57). Debajo, los estados de la pastura
+ * (EstadosFenologicos) y el área del disco (AreaDisco), que desde P24 se
+ * administran acá. Con Ver se consulta; cada acción pide Editar en Curvas.
  */
 #[Layout('layouts.app')]
 class Curvas extends Component
@@ -52,6 +53,8 @@ class Curvas extends Component
     public ?int $formularioId = null;
 
     public ?int $bajaId = null;
+
+    public bool $mostrarAreaDisco = false;
 
     public function mount(): void
     {
@@ -177,6 +180,25 @@ class Curvas extends Component
         $this->detalleId = null;
         $this->toastExito(__('curvas.toasts.eliminada'));
     }
+
+    // ----- Área del disco (hijo, P24) ----------------------------------------
+
+    public function abrirAreaDisco(): void
+    {
+        Gate::authorize('puedeEditar', 'curvas');
+
+        $this->mostrarAreaDisco = true;
+    }
+
+    #[On('cerrar-area-disco')]
+    public function cerrarAreaDisco(): void
+    {
+        $this->mostrarAreaDisco = false;
+    }
+
+    /** Cambió un estado (el filtro) o el área (los kg de las rectas): alcanza con volver a dibujar. */
+    #[On(['estados-fenologicos-cambiados', 'area-disco-guardada'])]
+    public function refrescar(): void {}
 
     // ----- Render ------------------------------------------------------------
 

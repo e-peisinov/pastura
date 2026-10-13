@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Configuracion;
+namespace App\Livewire\Curvas;
 
 use App\Livewire\Traits\ConfirmaDescarte;
 use App\Livewire\Traits\EnviaToasts;
@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 /**
- * Alta y edición de un estado de la pastura (hijo de Configuracion, P23):
- * solo el nombre, único sin distinguir mayúsculas. Es lo que elige el
- * recorredor al empezar y lo que separa las curvas de un potrero.
+ * Alta y edición de un estado de la pastura (P23; hijo de EstadosFenologicos
+ * desde P24): solo el nombre, único sin distinguir mayúsculas. Es lo que
+ * elige el recorredor al empezar y lo que separa las curvas de un potrero.
  */
 class EstadoFenologicoFormulario extends Component
 {
@@ -27,7 +27,7 @@ class EstadoFenologicoFormulario extends Component
 
     public function mount(?int $estadoId = null): void
     {
-        Gate::authorize('puedeEditar', 'configuracion');
+        Gate::authorize('puedeEditar', 'curvas');
 
         if ($estadoId !== null) {
             $estado = EstadoFenologico::query()->findOrFail($estadoId);
@@ -41,26 +41,26 @@ class EstadoFenologicoFormulario extends Component
 
     public function guardar(): void
     {
-        Gate::authorize('puedeEditar', 'configuracion');
+        Gate::authorize('puedeEditar', 'curvas');
 
         $this->resetErrorBag();
 
         $datos = Validator::make(['nombre' => trim($this->nombre)], [
             'nombre' => ['required', 'string', 'max:100', $this->nombreUnico()],
         ], [], [
-            'nombre' => __('configuracion.estados.campos.nombre'),
+            'nombre' => __('curvas.estados.campos.nombre'),
         ])->validate();
 
         if ($this->estadoId === null) {
             EstadoFenologico::query()->create($datos + ['activo' => true]);
-            $this->toastExito(__('configuracion.estados.toasts.creado'));
+            $this->toastExito(__('curvas.estados.toasts.creado'));
         } else {
             EstadoFenologico::query()->findOrFail($this->estadoId)->update($datos);
-            $this->toastExito(__('configuracion.estados.toasts.modificado'));
+            $this->toastExito(__('curvas.estados.toasts.modificado'));
         }
 
         $this->marcarFormularioLimpio();
-        $this->dispatch('estado-fenologico-guardado');
+        $this->dispatch('estados-fenologicos-cambiados');
         $this->cerrarFormulario();
     }
 
@@ -74,7 +74,7 @@ class EstadoFenologicoFormulario extends Component
                 ->exists();
 
             if ($repetido) {
-                $falla(__('validation.unique', ['attribute' => __('configuracion.estados.campos.nombre')]));
+                $falla(__('validation.unique', ['attribute' => __('curvas.estados.campos.nombre')]));
             }
         };
     }
@@ -92,6 +92,6 @@ class EstadoFenologicoFormulario extends Component
 
     public function render()
     {
-        return view('livewire.configuracion.estado-fenologico-formulario');
+        return view('livewire.curvas.estado-fenologico-formulario');
     }
 }

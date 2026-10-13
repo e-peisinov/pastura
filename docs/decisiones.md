@@ -295,3 +295,16 @@ que se hace **una curva por estado fenológico**.
   para después.
 - La palabra **calibración** sigue siendo la de la cámara (glosario); lo de
   los cortes es la **curva de biomasa**.
+
+**P24 — 2026-10-13 — Los estados de la pastura y el área del disco se
+administran en Curvas (modifica P23).** Los dos solo sirven para las curvas:
+quien arma una y no encuentra el estado que necesita lo tiene que poder
+crear ahí, sin ir a otro módulo. Pasan de Configuración a la pantalla de
+Curvas, debajo del listado: el ABM de estados (`EstadosFenologicos`, con su
+formulario) y el área del disco (`AreaDisco`). Se **mueven, no se copian**:
+Configuración queda con la organización, los tipos de pastura y los
+parámetros del seguimiento. El permiso pasa a ser **Editar en Curvas** (el
+administrador por omisión); el recorredor, que nace con Ver, los mira. El
+área se sigue guardando en la fila de `configuracion` (no cambia el
+esquema). Los estados los gestiona el usuario libremente: no hace falta
+confirmar con Mateo una lista cerrada.

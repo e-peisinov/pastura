@@ -146,9 +146,7 @@
                 </x-ui.cards>
             </section>
 
-            @include('livewire.configuracion.partials.estados')
-
-            {{-- Parámetros del seguimiento (P17) y área del disco (P23) --}}
+            {{-- Parámetros del seguimiento (P17) --}}
             <section class="bg-white border border-gray-200 rounded-lg" data-bloque-parametros>
                 <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-b border-gray-200">
                     <div>
@@ -173,11 +171,6 @@
                         <dd class="font-medium text-gray-800 tabular-nums">{{ trans_choice('configuracion.parametros.puntos', $configuracion->puntos_minimos, ['count' => $configuracion->puntos_minimos]) }}</dd>
                         <dd class="text-xs text-gray-500">{{ __('configuracion.parametros.ayuda_puntos_minimos') }}</dd>
                     </div>
-                    <div>
-                        <dt class="text-gray-500">{{ __('configuracion.parametros.campos.area_disco_m2') }}</dt>
-                        <dd class="font-medium text-gray-800 tabular-nums" data-area-disco>{{ __('configuracion.parametros.metros', ['valor' => rtrim(rtrim(Formato::numero($configuracion->area_disco_m2, 4), '0'), ',')]) }}</dd>
-                        <dd class="text-xs text-gray-500">{{ __('configuracion.parametros.ayuda_area_disco') }}</dd>
-                    </div>
                 </dl>
             </section>
         </div>
@@ -191,10 +184,6 @@
         <livewire:configuracion.parametros :key="'parametros'" />
     @endif
 
-    @if($estadoFormulario !== null)
-        <livewire:configuracion.estado-fenologico-formulario :estado-id="$estadoFormulario ?: null" :key="'estado-'.$estadoFormulario" />
-    @endif
-
     @if($tipoFormulario !== null)
         <livewire:configuracion.tipo-pastura-formulario :tipo-id="$tipoFormulario ?: null" :key="'tipo-'.$tipoFormulario" />
     @endif
@@ -205,15 +194,6 @@
                                  :boton="$bajaDesactiva ? __('ui.acciones.desactivar') : __('ui.acciones.eliminar')"
                                  confirmar="baja" cancelar="cancelarBaja">
             {{ __($bajaDesactiva ? 'configuracion.tipos.confirmar_desactivar' : 'configuracion.tipos.confirmar_eliminar', ['nombre' => $tipoEnBaja->nombre]) }}
-        </x-ui.modal-confirmacion>
-    @endif
-
-    {{-- Baja de un estado: eliminar sin curvas ni recorridas, desactivar si las tiene --}}
-    @if($estadoEnBaja)
-        <x-ui.modal-confirmacion :tipo="$bajaEstadoDesactiva ? 'advertencia' : 'peligro'"
-                                 :boton="$bajaEstadoDesactiva ? __('ui.acciones.desactivar') : __('ui.acciones.eliminar')"
-                                 confirmar="bajaEstado" cancelar="cancelarBajaEstado">
-            {{ __($bajaEstadoDesactiva ? 'configuracion.estados.confirmar_desactivar' : 'configuracion.estados.confirmar_eliminar', ['nombre' => $estadoEnBaja->nombre]) }}
         </x-ui.modal-confirmacion>
     @endif
 </div>

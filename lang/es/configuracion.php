@@ -2,8 +2,8 @@
 
 /*
  * Textos de la pantalla de Configuración (P17): la organización (marca
- * blanca, D8), los tipos de pastura con sus alturas (P16), los estados de la
- * pastura (P23) y los parámetros.
+ * blanca, D8), los tipos de pastura con sus alturas (P16) y los parámetros.
+ * Los estados de la pastura y el área del disco están en curvas.php (P24).
  */
 return [
     'titulo' => 'Configuración',
@@ -73,48 +73,15 @@ return [
         ],
     ],
 
-    // Estados de la pastura (P23): cada potrero tiene una curva de biomasa por estado.
-    'estados' => [
-        'titulo' => 'Estados de la pastura',
-        'intro' => 'El recorredor elige uno al empezar la recorrida y cada potrero tiene una curva de biomasa por estado: la misma altura no pesa lo mismo recién pastoreada que en plena primavera.',
-        'nuevo' => 'Nuevo estado',
-        'modificar' => 'Modificar estado de la pastura',
-        'columnas' => [
-            'nombre' => 'Estado',
-            'uso' => 'Uso',
-            'estado' => 'Activo',
-        ],
-        'uso' => ':curvas · :recorridas',
-        'curvas' => '{0} Sin curvas|{1} 1 curva|[2,*] :count curvas',
-        'recorridas' => '{0} sin recorridas|{1} 1 recorrida|[2,*] :count recorridas',
-        'sin_registros' => 'No hay estados cargados. Sin estados, la app no pregunta cómo está la pastura y no hay kg MS/ha.',
-        'campos' => [
-            'nombre' => 'Nombre',
-        ],
-        'ayuda_nombre' => 'Por ejemplo: recién pastoreada, rebrote, pleno crecimiento.',
-        'confirmar_eliminar' => '¿Eliminar el estado ":nombre"? No lo usa ninguna curva ni recorrida, así que se borra en el momento.',
-        'confirmar_desactivar' => 'El estado ":nombre" lo usan curvas o recorridas: se desactiva y la app deja de ofrecerlo, pero lo que ya lo tiene lo conserva.',
-        'toasts' => [
-            'creado' => 'Estado de la pastura creado.',
-            'modificado' => 'Estado de la pastura modificado.',
-            'eliminado' => 'Estado de la pastura eliminado.',
-            'desactivado' => 'El estado lo usan curvas o recorridas: se desactivó en vez de eliminarse.',
-            'reactivado' => 'Estado de la pastura reactivado.',
-        ],
-    ],
-
-    // Parámetros del seguimiento (P17) y área del disco (P23).
+    // Parámetros del seguimiento (P17).
     'parametros' => [
         'titulo' => 'Parámetros',
-        'intro' => 'Cuándo un potrero queda sin medir, cuándo una recorrida queda para revisar y qué superficie corta cada muestra de una curva.',
+        'intro' => 'Cuándo un potrero queda sin medir y cuándo una recorrida queda para revisar.',
         'modificar' => 'Modificar parámetros',
         'campos' => [
             'dias_sin_medir' => 'Días para quedar sin medir',
             'puntos_minimos' => 'Puntos mínimos por recorrida',
-            'area_disco_m2' => 'Área del disco (m²)',
         ],
-        'ayuda_area_disco' => 'Lo que se corta en cada muestra de una curva de biomasa. Con 0,1 m², cada gramo seco son 100 kg MS/ha. Cambiarla recalcula los kilos de todas las curvas.',
-        'metros' => ':valor m²',
         'ayuda_dias_sin_medir' => 'Un potrero activo cuya última recorrida tiene más días que esto queda sin medir.',
         'ayuda_puntos_minimos' => 'Una recorrida con menos puntos queda para revisar.',
         'dias' => '{1} 1 día|[2,*] :count días',
