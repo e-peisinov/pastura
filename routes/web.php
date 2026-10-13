@@ -7,6 +7,7 @@ use App\Livewire\Auditoria\Auditoria;
 use App\Livewire\Campos\Campos;
 use App\Livewire\Configuracion\Configuracion;
 use App\Livewire\Curvas\Curvas;
+use App\Livewire\Instrucciones\Instrucciones;
 use App\Livewire\Recorridas\Recorridas;
 use App\Livewire\Reportes\Reportes;
 use App\Livewire\Tablero\Tablero;
@@ -46,6 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::view('profile', 'profile')->name('profile');
+
+    // Sin permiso de la matriz: la ve todo usuario con sesión (P25).
+    Route::get('instrucciones', Instrucciones::class)->name('instrucciones');
 
     // Cerrar sesión desde el menú del usuario del sidebar (D24).
     Route::post('logout', function (Logout $logout) {

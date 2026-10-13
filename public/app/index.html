@@ -60,6 +60,72 @@
           <span id="ir-panel-detalle">Campos, potreros, recorridas y usuarios. Para volver: menú del usuario → Abrir la app de campo.</span>
         </button>
       </div>
+      <button id="btn-ir-ayuda" class="btn btn-secundario btn-ancho btn-ayuda" type="button">Ayuda: cómo medir y usar la app sin señal</button>
+    </section>
+
+    <!-- AYUDA (P25): la guía corta, guardada en el celular para leerla sin señal.
+         El instructivo completo está en el panel (Instrucciones). -->
+    <section id="tab-ayuda" class="tab ayuda-guia" hidden>
+      <div class="ultima-cabecera">
+        <h1 class="inicio-saludo">Ayuda</h1>
+        <button class="btn btn-secundario btn-chico" data-ir="inicio" type="button">Volver</button>
+      </div>
+
+      <details class="tarjeta" open>
+        <summary>Una recorrida, paso a paso</summary>
+        <ol>
+          <li>En Inicio, tocá <strong>Hacer una recorrida</strong>.</li>
+          <li>Elegí el campo, el potrero y <strong>cómo está la pastura</strong>.</li>
+          <li>Tocá <strong>Empezar recorrida</strong> y <strong>Activar cámara</strong>.</li>
+          <li>Apoyá el pasturómetro con el caño derecho: el chip <strong>Nivel</strong> se pone verde con 5° o menos.</li>
+          <li>Con los marcadores a la vista, tocá <strong>Medir</strong>. El punto se guarda con el GPS.</li>
+          <li>Medí en distintos lugares del potrero y al final tocá <strong>Terminar</strong>.</li>
+        </ol>
+      </details>
+
+      <details class="tarjeta">
+        <summary>Calibrar la cámara</summary>
+        <ol>
+          <li>En <strong>Calibrar</strong>, apoyá el pasturómetro en piso duro, con el disco en el piso. Dejá <strong>0</strong> y tocá <strong>Capturar</strong>.</li>
+          <li>Levantá el disco con tacos de altura conocida (10, 20, 30, 40 cm), escribí cada altura y capturá.</li>
+          <li>Si una fila tiene mucho error, borrala y capturala de nuevo.</li>
+        </ol>
+        <p class="ayuda">Con 2 alturas alcanza; con 4 o 5 es mucho más preciso. Volvé a calibrar si cambiás de celular, de caño o movés la cámara.</p>
+      </details>
+
+      <details class="tarjeta">
+        <summary>Con señal y sin señal</summary>
+        <ul>
+          <li><strong>Antes de salir</strong>, con señal: abrí la app y tocá <strong>Actualizar campos</strong> en la recorrida nueva.</li>
+          <li>Sin señal se mide igual: todo queda guardado en el celular.</li>
+          <li>Las recorridas suben solas cuando vuelve la señal, al abrir la app y cada minuto. A mano: <strong>Registros → Subir ahora</strong>.</li>
+          <li>Si el panel rechaza una, en <strong>Registros</strong> está el motivo; si es el potrero, se puede cambiar y vuelve a subir.</li>
+          <li><strong>Borrar todos los datos</strong> borra también lo que no se subió.</li>
+        </ul>
+      </details>
+
+      <details class="tarjeta">
+        <summary>Si algo no anda</summary>
+        <ul>
+          <li><strong>No lee el disco</strong>: que se vean al menos 2 marcadores enteros, sin sombra fuerte ni pasto encima, con la lente limpia.</li>
+          <li><strong>La cámara no arranca</strong>: revisá el permiso de cámara del navegador en los ajustes del celular.</li>
+          <li><strong>Puntos sin GPS</strong>: activá la ubicación y esperá a que el chip GPS se ponga verde.</li>
+          <li><strong>No aparece un potrero o un estado</strong>: con señal, tocá <strong>Actualizar campos</strong>.</li>
+          <li><strong>Sin kg MS/ha</strong>: el potrero no tiene curva de biomasa para ese estado.</li>
+          <li><strong>Alturas raras</strong>: volvé a calibrar.</li>
+        </ul>
+      </details>
+
+      <details class="tarjeta">
+        <summary>Instalar la app</summary>
+        <ul>
+          <li><strong>Android (Chrome)</strong>: Ajustes → <strong>Instalar en el celular</strong>, o menú de Chrome → <strong>Instalar app</strong>.</li>
+          <li><strong>iPhone (Safari)</strong>: <strong>Compartir</strong> → <strong>Agregar a inicio</strong>. En iPhone, usala siempre instalada.</li>
+        </ul>
+      </details>
+
+      <button id="btn-instructivo" class="btn btn-primario btn-ancho" type="button">Instructivo completo en el panel</button>
+      <p id="instructivo-detalle" class="ayuda">Curvas de biomasa, campos, reportes y todo lo del panel. Necesita señal.</p>
     </section>
 
     <!-- MEDIR, arriba de la cámara: la recorrida en curso o elegir dónde medir -->

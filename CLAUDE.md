@@ -86,6 +86,11 @@ estándar primero y después la pantalla.
 12. **Nunca `migrate:fresh`, `migrate:refresh`, `db:wipe` ni nada que vacíe
     la base local.** El esquema se actualiza con `php artisan migrate` y los
     datos de referencia nuevos con `php artisan db:seed --class=...`.
+13. **Las instrucciones acompañan al sistema.** Si cambia algo que el
+    usuario ve o hace (un paso, un botón, una regla), se actualiza en el
+    mismo cambio el instructivo del panel (`lang/es/instrucciones.php`) y, si
+    es de la app, la guía corta de la app (`#tab-ayuda` en
+    `public/app/index.html`) (P25).
 
 ## App de campo (`public/app/`)
 

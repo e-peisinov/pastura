@@ -28,9 +28,9 @@ class PaseAlPanelTest extends TestCase
         $this->token = $this->juan->createToken('iPhone · Safari')->plainTextToken;
     }
 
-    private function pedirEnlace(): string
+    private function pedirEnlace(array $datos = []): string
     {
-        $url = $this->withToken($this->token)->postJson('/api/v1/enlace-panel')
+        $url = $this->withToken($this->token)->postJson('/api/v1/enlace-panel', $datos)
             ->assertOk()
             ->json('url');
 
@@ -58,6 +58,22 @@ class PaseAlPanelTest extends TestCase
 
         $this->get($url)->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($this->juan, 'web');
+    }
+
+    /** La ayuda de la app abre el instructivo completo (P25). */
+    public function test_el_enlace_puede_llevar_a_las_instrucciones(): void
+    {
+        $url = $this->pedirEnlace(['destino' => 'instrucciones']);
+
+        $this->get($url)->assertRedirect(route('instrucciones'));
+        $this->assertAuthenticatedAs($this->juan, 'web');
+    }
+
+    /** Solo destinos conocidos: cualquier otro se rechaza al pedir el enlace. */
+    public function test_un_destino_desconocido_se_rechaza(): void
+    {
+        $this->withToken($this->token)->postJson('/api/v1/enlace-panel', ['destino' => 'https://otro.sitio'])
+            ->assertUnprocessable();
     }
 
     public function test_el_enlace_sirve_una_sola_vez(): void

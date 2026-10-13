@@ -203,3 +203,4 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | Auditoría de lo sensible (P18, P20) | Hecha |
 | Reportes con CSV y PDF (P18, P21) | Hecha |
 | Estados de la pastura y área del disco en Curvas (P24) | Hecha |
+| Instrucciones en el panel y ayuda sin señal en la app (P25) | Hecha |

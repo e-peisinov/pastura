@@ -223,6 +223,16 @@ td.mal, .resumen.mal { color: var(--mal); }
 .opcion-inicio:disabled { cursor: default; }
 .opcion-inicio:disabled strong { color: var(--texto-suave); }
 
+/* ---------- ayuda (P25) ---------- */
+.btn-ayuda { margin-top: .75rem; }
+.ayuda-guia .ultima-cabecera { align-items: center; }
+.ayuda-guia .ultima-cabecera h1 { margin: 0 0 .5rem; }
+.ayuda-guia summary { font-weight: 600; cursor: pointer; padding: .1rem 0; }
+.ayuda-guia details[open] summary { margin-bottom: .5rem; }
+.ayuda-guia ol, .ayuda-guia ul { margin: 0 0 .5rem; padding-left: 1.25rem; }
+.ayuda-guia li { margin-bottom: .4rem; line-height: 1.4; }
+.ayuda-guia #instructivo-detalle { margin-top: .5rem; }
+
 /* ---------- pestañas ---------- */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;

@@ -199,8 +199,8 @@ class PiezasPantallaTest extends TestCase
     public function test_ningun_enlace_interno_quedo_sin_wire_navigate(): void
     {
         // D31: se revisan los <a href> escritos a mano; los de <x-ui.boton> y
-        // <x-ui.accion> lo ponen solos. Quedan afuera tel:, mailto:, externos
-        // y los que salen del panel a otra aplicación del mismo servidor
+        // <x-ui.accion> lo ponen solos. Quedan afuera tel:, mailto:, externos,
+        // las anclas de la misma página (#seccion, P25) y los que salen del panel a otra aplicación del mismo servidor
         // (`data-fuera-del-panel`, como la app de campo en /app, P12).
         $sinNavegar = [];
         $vistas = array_merge(
@@ -214,6 +214,7 @@ class PiezasPantallaTest extends TestCase
 
             foreach ($coincidencias as [$etiqueta, $href, $resto]) {
                 $externo = str_starts_with($href, 'http') || str_starts_with($href, 'tel:') || str_starts_with($href, 'mailto:')
+                    || str_starts_with($href, '#')
                     || str_contains($resto, 'data-fuera-del-panel');
 
                 if (! $externo && ! str_contains($resto, 'wire:navigate') && ! str_contains($resto, '$navegaConLivewire')) {

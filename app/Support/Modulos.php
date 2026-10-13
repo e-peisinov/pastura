@@ -50,6 +50,20 @@ final class Modulos
         return [];
     }
 
+    /**
+     * Los módulos libres (P25): con ruta y atajo, pero sin permisos. Los ve
+     * todo usuario con sesión, al final del sidebar; no están en todos(), así
+     * que no tienen fila en la matriz de usuarios ni nivel por omisión.
+     *
+     * @return list<Modulo>
+     */
+    public static function libres(): array
+    {
+        return [
+            new Modulo('instrucciones', 'instrucciones', 'fa-circle-question', tecla: 'n'),
+        ];
+    }
+
     /** @return list<string> */
     public static function nombres(): array
     {
@@ -84,20 +98,28 @@ final class Modulos
     }
 
     /**
-     * Los módulos que ve un usuario: con ruta registrada y al menos Ver.
+     * Los módulos que ve un usuario: con ruta registrada y al menos Ver, y
+     * después los libres, que no piden permiso (P25).
      *
      * @param  list<Modulo>|null  $lista  por omisión, todos(); inyectable para tests
      * @return list<Modulo>
      */
     public static function visibles(?User $usuario, ?array $lista = null): array
     {
-        $lista ??= self::todos();
+        // Dado de baja no ve nada, tampoco los libres.
+        if ($usuario === null || ! $usuario->activo) {
+            return [];
+        }
 
-        return array_values(array_filter(
-            $lista,
+        $conPermiso = array_filter(
+            $lista ?? self::todos(),
             fn (Modulo $modulo) => $modulo->tieneRuta()
-                && $usuario !== null
                 && Gate::forUser($usuario)->allows('puedeVer', $modulo->nombre),
-        ));
+        );
+        $libres = $lista === null
+            ? array_filter(self::libres(), fn (Modulo $modulo) => $modulo->tieneRuta())
+            : [];
+
+        return array_values([...$conPermiso, ...$libres]);
     }
 }

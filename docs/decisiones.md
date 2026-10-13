@@ -308,3 +308,25 @@ administrador por omisión); el recorredor, que nace con Ver, los mira. El
 área se sigue guardando en la fila de `configuracion` (no cambia el
 esquema). Los estados los gestiona el usuario libremente: no hace falta
 confirmar con Mateo una lista cerrada.
+
+**P25 — 2026-10-13 — Instrucciones en el panel y ayuda en la app.** Un
+instructivo de cómo se usa GeoGrass: cómo funciona, instalar la app
+(Android y iPhone), una recorrida paso a paso, calibrar, con señal y sin
+señal, curvas de biomasa, cada pantalla del panel y problemas frecuentes.
+- **En el panel**, un módulo **Instrucciones** (`/instrucciones`, Alt+N) que
+  ve **todo usuario con sesión, sin permiso**: es el primer **módulo libre**
+  (`Modulos::libres()`), con ruta y atajo pero sin fila en la matriz; el
+  sidebar lo pone al final. Un usuario dado de baja no lo ve.
+- Las secciones de la app son para todos; cada sección del panel aparece si
+  el usuario puede ver ese módulo, y el **administrador ve todas** siempre.
+- La guía de instalación **no es pública**: está dentro del instructivo.
+- Los textos van en `lang/es/instrucciones.php` como bloques (texto, pasos,
+  lista, nota) que dibuja una sola vista.
+- **En la app**, sin solapa nueva (la barra ya tiene cinco): un botón
+  **Ayuda** en el Inicio abre una guía corta que se lee **sin señal** (va en
+  `index.html`, guardado por el service worker) y un botón **Instructivo
+  completo en el panel**, que usa el enlace de un solo uso de P12 con
+  `destino=instrucciones` (solo destinos de una lista; va dentro de la
+  firma).
+- Regla dura 13: si cambia algo que el usuario ve o hace, se actualizan las
+  instrucciones en el mismo cambio.

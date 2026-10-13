@@ -14,6 +14,7 @@ return [
         'reportes' => 'Reportes',
         'configuracion' => 'Configuración',
         'auditoria' => 'Auditoría',
+        'instrucciones' => 'Instrucciones',
     ],
 
     // Módulo anunciado (D66): el ítem apagado del sidebar y su title

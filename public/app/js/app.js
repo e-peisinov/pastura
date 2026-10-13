@@ -686,6 +686,7 @@
     $('#medir-arriba').hidden = tab !== 'medir';
     if (tab === 'registros') pintarRegistros();
     if (tab === 'inicio') pintarInicio();
+    if (tab === 'ayuda') pintarAyuda();
   }
 
   /* ================= inicio: medir o ir al panel (P12) ================= */
@@ -713,6 +714,15 @@
     $('#ir-panel-detalle').textContent = navigator.onLine
       ? 'Campos, potreros, recorridas y usuarios. Para volver: menú del usuario → Abrir la app de campo.'
       : 'Necesitás conexión para entrar al panel.';
+    pintarAyuda();
+  }
+
+  // La guía corta se lee sin señal; el instructivo completo está en el panel.
+  function pintarAyuda() {
+    $('#btn-instructivo').disabled = !navigator.onLine;
+    $('#instructivo-detalle').textContent = navigator.onLine
+      ? 'Curvas de biomasa, campos, reportes y todo lo del panel.'
+      : 'Necesitás conexión para abrir el instructivo completo.';
   }
 
   function irARecorrida() {
@@ -722,15 +732,16 @@
 
   // El panel se abre con un enlace de un solo uso, sin volver a escribir la
   // contraseña, en la misma ventana: instalada, la app lo muestra adentro
-  // porque el panel entra en el alcance del manifest (P14).
-  async function irAlPanel() {
+  // porque el panel entra en el alcance del manifest (P14). Con destino
+  // 'instrucciones' abre el instructivo en vez del tablero (P25).
+  async function irAlPanel(destino = null) {
     if (!estado.sesion || estado.sesionVencida) { mostrarIngreso(false); return; }
     if (!navigator.onLine) { toast('Necesitás conexión para entrar al panel', 'mal'); return; }
-    const boton = $('#btn-ir-panel');
+    const boton = $(destino ? '#btn-instructivo' : '#btn-ir-panel');
     if (boton.dataset.abriendo) return;
     boton.dataset.abriendo = '1';
     try {
-      const { url } = await Api.enlacePanel();
+      const { url } = await Api.enlacePanel(destino);
       location.assign(url);
     } catch (e) {
       if (e.estado === 401) {
@@ -1214,7 +1225,9 @@
     });
 
     $('#btn-ir-recorrida').addEventListener('click', irARecorrida);
-    $('#btn-ir-panel').addEventListener('click', irAlPanel);
+    $('#btn-ir-panel').addEventListener('click', () => irAlPanel());
+    $('#btn-ir-ayuda').addEventListener('click', () => irA('ayuda'));
+    $('#btn-instructivo').addEventListener('click', () => irAlPanel('instrucciones'));
     $('#form-ingreso').addEventListener('submit', ingresar);
     $('#btn-cancelar-ingreso').addEventListener('click', () => { $('#pantalla-ingreso').hidden = true; });
     document.querySelectorAll('[data-ingresar]').forEach(b => b.addEventListener('click', () => mostrarIngreso(false)));

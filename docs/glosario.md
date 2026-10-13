@@ -140,3 +140,7 @@ entre **Hacer una recorrida** e **Ir al panel** (P12). No confundir con el
 **Ir al panel** — Abrir el panel desde la app con la sesión ya iniciada, sin
 volver a escribir la contraseña. Usa un enlace de un solo uso que vence en
 un minuto (P12). Necesita señal.
+
+**Instrucciones** — El instructivo del panel: cómo se usa todo GeoGrass. Lo
+ve cualquier usuario, sin permiso (P25). *No confundir* con la **Ayuda** de
+la app, que es la guía corta para leer sin señal y lleva al instructivo.
