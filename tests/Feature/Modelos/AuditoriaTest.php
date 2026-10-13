@@ -9,6 +9,8 @@ use App\Enums\Rol;
 use App\Models\Auditoria;
 use App\Models\Campo;
 use App\Models\Configuracion;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
@@ -193,17 +195,72 @@ class AuditoriaTest extends TestCase
     {
         $this->actingAs($this->admin);
 
-        $tipo = TipoPastura::factory()->create(['nombre' => 'Alfalfa', 'altura_ingreso_cm' => 20, 'altura_salida_cm' => 7, 'biomasa_a' => 25, 'biomasa_b' => 0]);
+        $tipo = TipoPastura::factory()->create(['nombre' => 'Alfalfa', 'altura_ingreso_cm' => 20, 'altura_salida_cm' => 7]);
         $this->assertSame('Creó el tipo de pastura «Alfalfa».', $this->ultima()->descripcion());
 
-        $tipo->update(['altura_ingreso_cm' => 22.5, 'biomasa_b' => -100]);
-        $this->assertSame('Modificó el tipo de pastura «Alfalfa»: altura de ingreso (cm) de 20 a 22,5, B de la fórmula de 0 a -100.', $this->ultima()->descripcion());
+        $tipo->update(['altura_ingreso_cm' => 22.5, 'altura_salida_cm' => 8]);
+        $this->assertSame('Modificó el tipo de pastura «Alfalfa»: altura de ingreso (cm) de 20 a 22,5, altura de salida (cm) de 7 a 8.', $this->ultima()->descripcion());
 
         $tipo->update(['activo' => false]);
         $this->assertSame('Modificó el tipo de pastura «Alfalfa»: estado de activo a inactivo.', $this->ultima()->descripcion());
 
         $tipo->delete();
         $this->assertSame('Eliminó el tipo de pastura «Alfalfa».', $this->ultima()->descripcion());
+    }
+
+    /** P23: el estado elige la curva de los kg, así que se audita todo. */
+    public function test_estados_de_la_pastura_alta_cambios_y_baja(): void
+    {
+        $this->actingAs($this->admin);
+
+        $estado = EstadoFenologico::factory()->create(['nombre' => 'Rebrote']);
+        $this->assertSame('Creó el estado de la pastura «Rebrote».', $this->ultima()->descripcion());
+
+        $estado->update(['nombre' => 'Rebrote temprano']);
+        $this->assertSame('Modificó el estado de la pastura «Rebrote temprano»: nombre de Rebrote a Rebrote temprano.', $this->ultima()->descripcion());
+
+        $estado->update(['activo' => false]);
+        $this->assertSame('Modificó el estado de la pastura «Rebrote temprano»: estado de activo a inactivo.', $this->ultima()->descripcion());
+
+        $estado->delete();
+        $this->assertSame('Eliminó el estado de la pastura «Rebrote temprano».', $this->ultima()->descripcion());
+        $this->assertSame(route('configuracion'), $this->ultima()->enlace());
+    }
+
+    /** P23: la curva cambia los kg; la que se reemplaza queda registrada a nombre de quien guardó la nueva. */
+    public function test_curvas_alta_reemplazo_y_baja(): void
+    {
+        $this->actingAs($this->admin);
+        $rebrote = EstadoFenologico::factory()->create(['nombre' => 'Rebrote']);
+
+        $vieja = CurvaBiomasa::factory()->create(['potrero_id' => $this->lote4->id, 'estado_fenologico_id' => $rebrote->id, 'fecha' => '2026-09-01']);
+        $this->assertSame('Creó la curva de biomasa de La Esperanza · Lote 4 (Rebrote, 01/09/2026).', $this->ultima()->descripcion());
+        $this->assertSame(route('curvas', ['potrero' => $this->lote4->id, 'vigencia' => 'todas']), $this->ultima()->enlace());
+
+        CurvaBiomasa::factory()->create(['potrero_id' => $this->lote4->id, 'estado_fenologico_id' => $rebrote->id, 'fecha' => '2026-10-01']);
+        $reemplazo = Auditoria::query()->where('entidad_id', $vieja->id)->where('accion', AccionAuditada::Modificado)->sole();
+        $this->assertSame('Modificó la curva de biomasa de La Esperanza · Lote 4 (Rebrote, 01/09/2026): estado de vigente a reemplazada.', $reemplazo->descripcion());
+        $this->assertSame($this->admin->id, $reemplazo->user_id);
+
+        $vieja->fresh()->update(['fecha' => '2026-09-02']);
+        $this->assertStringEndsWith('fecha de los cortes de 01/09/2026 a 02/09/2026.', $this->ultima()->descripcion());
+
+        $vieja->fresh()->delete();
+        $this->assertSame('Eliminó la curva de biomasa de La Esperanza · Lote 4 (Rebrote, 02/09/2026).', $this->ultima()->descripcion());
+    }
+
+    /** Cambiarle el estado a una recorrida cambia sus kg (P23): se audita. */
+    public function test_cambiar_el_estado_de_una_recorrida(): void
+    {
+        $rebrote = EstadoFenologico::factory()->create(['nombre' => 'Rebrote']);
+        $primavera = EstadoFenologico::factory()->create(['nombre' => 'Pleno crecimiento']);
+        $recorrida = $this->recorrida();
+        $recorrida->update(['estado_fenologico_id' => $rebrote->id]);
+        $this->actingAs($this->admin);
+
+        $recorrida->update(['estado_fenologico_id' => $primavera->id]);
+
+        $this->assertSame('Modificó la recorrida de La Esperanza · Lote 4 del 05/10/2026 (Juan Pérez): estado de la pastura de Rebrote a Pleno crecimiento.', $this->ultima()->descripcion());
     }
 
     public function test_los_parametros_y_no_la_marca(): void

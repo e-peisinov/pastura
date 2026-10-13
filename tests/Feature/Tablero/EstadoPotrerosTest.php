@@ -8,6 +8,7 @@ use App\Models\Configuracion;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\CurvaBiomasa;
 use App\Models\TipoPastura;
 use App\Support\Tablero\EstadoPotreros;
 use App\Support\Tablero\FilaPotrero;
@@ -36,7 +37,7 @@ class EstadoPotrerosTest extends TestCase
         Carbon::setTestNow('2026-10-10 15:00:00');
         Configuracion::factory()->create(['dias_sin_medir' => 7]);
         $this->campo = Campo::factory()->create(['nombre' => 'La Esperanza']);
-        $this->alfalfa = TipoPastura::factory()->create(['altura_ingreso_cm' => 20, 'altura_salida_cm' => 7, 'biomasa_a' => 100, 'biomasa_b' => 0]);
+        $this->alfalfa = TipoPastura::factory()->create(['altura_ingreso_cm' => 20, 'altura_salida_cm' => 7]);
     }
 
     protected function tearDown(): void
@@ -46,13 +47,20 @@ class EstadoPotrerosTest extends TestCase
         parent::tearDown();
     }
 
+    /** Los de alfalfa tienen su curva vigente: kg = 100 × h (P23). */
     private function potrero(string $nombre, ?TipoPastura $tipo = null, array $mas = []): Potrero
     {
-        return Potrero::factory()->for($mas['campo'] ?? $this->campo)->create([
+        $potrero = Potrero::factory()->for($mas['campo'] ?? $this->campo)->create([
             'nombre' => $nombre,
             'tipo_pastura_id' => ($tipo ?? $this->alfalfa)?->id,
             ...array_diff_key($mas, ['campo' => true]),
         ]);
+
+        if ($tipo === null) {
+            CurvaBiomasa::factory()->recta(100, 0)->create(['potrero_id' => $potrero->id]);
+        }
+
+        return $potrero;
     }
 
     /** @param  list<float>  $alturas */

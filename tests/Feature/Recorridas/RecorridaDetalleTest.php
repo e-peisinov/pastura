@@ -10,6 +10,8 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -37,6 +39,8 @@ class RecorridaDetalleTest extends TestCase
 
     private Recorrida $recorrida;
 
+    private EstadoFenologico $rebrote;
+
     /** @var list<Medicion> */
     private array $puntos;
 
@@ -51,14 +55,16 @@ class RecorridaDetalleTest extends TestCase
             ->for(Campo::factory()->create(['nombre' => 'La Esperanza']))
             ->create([
                 'nombre' => 'Lote 4', 'contorno' => self::CUADRADO,
-                'tipo_pastura_id' => TipoPastura::factory()->create(['biomasa_a' => 150, 'biomasa_b' => 300])->id,
+                'tipo_pastura_id' => TipoPastura::factory()->create()->id,
             ]);
+        $this->rebrote = EstadoFenologico::factory()->create(['nombre' => 'Rebrote']);
+        CurvaBiomasa::factory()->recta(150, 300)->create(['potrero_id' => $potrero->id, 'estado_fenologico_id' => $this->rebrote->id]);
 
         $this->recorrida = Recorrida::factory()->for($potrero)->for($this->juan)
             ->create(['iniciada_en' => '2026-10-05 08:00:00', 'dispositivo' => 'iPhone 13']);
 
         // Activos: 10, 12,5 y 14 cm → media 12,2; rango 10,0–14,0. Los kg salen de
-        // la fórmula 150 × h + 300 (P16), no de lo que mandó el celular:
+        // la curva 150 × h + 300 del potrero para su estado (P23), no de lo que mandó el celular:
         // 1800, 2175 y 2400 → 2125.
         $this->puntos = [
             $this->punto('08:05:10', 10, 1800, ['precision_m' => 4.2, 'imagenes' => 10, 'dispersion_cm' => 0.35]),
@@ -223,6 +229,51 @@ class RecorridaDetalleTest extends TestCase
 
         $this->assertTrue($this->puntos[0]->fresh()->activo);
         $this->assertTrue($this->recorrida->fresh()->activo);
+    }
+
+    /**
+     * P23: cambiar el estado desde la ficha cambia la curva. Con la de pleno
+     * crecimiento (100 × h): (1000 + 1250 + 1400) / 3 = 1216,67 → 1.217. Un
+     * estado sin curva deja la recorrida sin kilos y lo dice.
+     */
+    public function test_cambiar_el_estado_recalcula_los_kg(): void
+    {
+        $primavera = EstadoFenologico::factory()->create(['nombre' => 'Pleno crecimiento']);
+        $floracion = EstadoFenologico::factory()->create(['nombre' => 'Floración']);
+        CurvaBiomasa::factory()->recta(100, 0)->create(['potrero_id' => $this->recorrida->potrero_id, 'estado_fenologico_id' => $primavera->id]);
+
+        $ficha = $this->ficha($this->admin)
+            ->assertSet('estadoId', $this->rebrote->id)
+            ->assertSee('2.125')
+            ->set('estadoId', $primavera->id)
+            ->assertDispatched('toast', mensaje: __('recorridas.toasts.estado_con_curva'))
+            ->assertDispatched('recorrida-actualizada')
+            ->assertSee('1.217');
+        $this->assertEqualsWithDelta(1216.67, $ficha->viewData('resumen')->kgMedio, 0.01);
+        $this->assertSame($primavera->id, $this->recorrida->fresh()->estado_fenologico_id);
+
+        $ficha->set('estadoId', $floracion->id)
+            ->assertDispatched('toast', mensaje: __('recorridas.toasts.estado_sin_curva'))
+            ->assertSee(__('recorridas.detalle.sin_curva'))
+            ->assertSeeHtml('data-sin-curva');
+        $this->assertNull($this->recorrida->fresh()->kg_ms_ha_medio);
+
+        $ficha->set('estadoId', null)->assertSee(__('recorridas.detalle.sin_estado'));
+        $this->assertNull($this->recorrida->fresh()->estado_fenologico_id);
+    }
+
+    public function test_con_ver_no_se_cambia_el_estado(): void
+    {
+        $primavera = EstadoFenologico::factory()->create(['nombre' => 'Pleno crecimiento']);
+        $lector = User::factory()->admin()->conNivel('recorridas', Nivel::Ver)->create();
+
+        $this->ficha($lector)
+            ->assertSee('Rebrote')
+            ->assertDontSeeHtml('wire:model.live="estadoId"')
+            ->set('estadoId', $primavera->id)
+            ->assertForbidden();
+
+        $this->assertSame($this->rebrote->id, $this->recorrida->fresh()->estado_fenologico_id);
     }
 
     public function test_cerrar_avisa_al_listado(): void

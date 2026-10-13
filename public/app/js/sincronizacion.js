@@ -27,6 +27,8 @@ var Sincro = (() => {
   function armarCuerpo(recorrida, mediciones) {
     return {
       potrero_id: recorrida.potreroId,
+      // El que eligió al empezar (P23); null en una recorrida de antes.
+      estado_fenologico_id: recorrida.estadoId ?? null,
       iniciada_en: new Date(recorrida.iniciada).toISOString(),
       dispositivo: recorrida.dispositivo || null,
       observaciones: recorrida.observaciones || null,

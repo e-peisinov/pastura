@@ -59,6 +59,7 @@ viven en `lang/es/ui.php`.
 | `<livewire:clientes.cliente-formulario>` y `<livewire:vehiculos.vehiculo-formulario>` (formularios hijos que se montan abiertos y se apilan con `:z`; los usan su pantalla, la ficha del cliente, la orden y la factura; §1, D57) + trait `EligeClienteYVehiculo` (cabecera cliente / vehículo / km de la orden) | `app/Livewire/Clientes/ClienteFormulario.php`, `app/Livewire/Vehiculos/VehiculoFormulario.php`, `app/Livewire/Traits/EligeClienteYVehiculo.php` | Hecha (2026-09-14) |
 | Trait `AbreRecorridaEnModal` + parcial `livewire.tablero.partials.recorrida-detalle` (un bloque del tablero abre la recorrida en su ficha, encima, D78; molde: `AbreOrdenEnModal`) | `app/Livewire/Traits/AbreRecorridaEnModal.php`, `resources/views/livewire/tablero/partials/recorrida-detalle.blade.php` | Hecha (2026-10-10) |
 | `<x-ui.grafico-barras>` y `<x-ui.grafico-columnas>` + `Escala` (gráficos en HTML y CSS, sin librería; §11, D73) | `resources/views/components/ui/grafico-barras.blade.php`, `resources/views/components/ui/grafico-columnas.blade.php`, `app/Support/Reportes/Escala.php` | Hecha (2026-09-17) |
+| `<x-ui.grafico-dispersion>` (puntos x, y y su recta; §11, P23) | `resources/views/components/ui/grafico-dispersion.blade.php` | Hecha (2026-10-13) |
 
 Las pantallas Livewire de página completa usan `#[Layout('layouts.app')]` y
 ponen su título con `<x-ui.pagina>` (no pueden llenar el slot `header` del
@@ -687,7 +688,7 @@ que tiene el formato que ARCA manda.
 
 Los gráficos son **HTML y CSS, sin librería de JavaScript** ([D73](decisiones.md)):
 se redibujan con Livewire como cualquier otra vista, entran en mobile sin
-scroll horizontal (regla 4) y se pueden probar con `assertSeeHtml`. Hay dos
+scroll horizontal (regla 4) y se pueden probar con `assertSeeHtml`. Hay tres
 piezas y no se dibuja un gráfico a mano fuera de ellas:
 
 - **`<x-ui.grafico-barras :filas color>`** — barras horizontales para
@@ -699,6 +700,14 @@ piezas y no se dibuja un gráfico a mano fuera de ellas:
   tiempo (por día o por mes), con una o dos series lado a lado, leyenda, eje
   con marcas redondas (`App\Support\Reportes\Escala`), globo al pasar el
   mouse o enfocar con Tab, y "Ver tabla" con todos los valores.
+- **`<x-ui.grafico-dispersion :puntos :recta :eje-x :eje-y>`** — la relación
+  entre dos medidas: puntos (x, y) y, si la hay, la recta que los ajusta
+  (P23: altura del disco contra kg MS/ha de las muestras de una curva de
+  biomasa). Los dos ejes arrancan en cero, con marcas redondas (paso de 1, 2, 2,5 o 5 por una potencia de 10);
+  los puntos van en azul y la recta en naranja (el par de la regla 3). La
+  recta es un `<svg>` sin JavaScript; los puntos, círculos posicionados con
+  CSS para que no se deformen. No reemplaza la tabla: cada punto está escrito
+  en la lista que lo acompaña (regla 6).
 
 ### Reglas
 

@@ -22,7 +22,7 @@
         'activo' => $m->activo,
         'hora' => $m->tomada_en->format('H:i:s'),
         'altura' => $cm($m->altura_cm),
-        'kg' => ($kg = $m->kgMsHaSegun($potrero->tipoPastura)) === null ? $sinDato : Formato::numero($kg),
+        'kg' => ($kg = $m->kgMsHaSegun($recta)) === null ? $sinDato : Formato::numero($kg),
         'gps' => $m->tieneUbicacion()
             ? ($m->precision_m === null ? __('recorridas.detalle.con_gps') : __('recorridas.detalle.gps', ['valor' => Formato::numero($m->precision_m, 1)]))
             : __('recorridas.detalle.sin_gps'),
@@ -60,6 +60,26 @@
             <div>
                 <dt class="text-xs uppercase tracking-wide text-gray-500">{{ __('recorridas.detalle.resumen.kg') }}</dt>
                 <dd class="text-gray-800 tabular-nums">{{ $resumen->kgMedio === null ? $sinDato : Formato::numero($resumen->kgMedio) }}</dd>
+                {{-- Sin kilos: por qué (P23) --}}
+                @if($recta === null)
+                    <dd class="text-xs text-gray-500" data-sin-curva>
+                        {{ $recorrida->estado_fenologico_id === null ? __('recorridas.detalle.sin_estado') : __('recorridas.detalle.sin_curva') }}
+                        @if($verCurvas && $recorrida->estado_fenologico_id !== null)
+                            <a href="{{ route('curvas', ['potrero' => $potrero->id]) }}" wire:navigate class="underline hover:text-gray-700">{{ __('recorridas.detalle.ver_curvas') }}</a>
+                        @endif
+                    </dd>
+                @endif
+            </div>
+            {{-- Estado fenológico: elige la curva de los kg (P23) --}}
+            <div data-estado-recorrida>
+                <dt class="text-xs uppercase tracking-wide text-gray-500">{{ __('recorridas.detalle.resumen.estado') }}</dt>
+                @if($puedeEditar)
+                    <dd class="mt-1">
+                        <x-ui.combobox wire:model.live="estadoId" :opciones="$estados" :ordenar="false" :placeholder="__('recorridas.detalle.sin_estado_corto')" />
+                    </dd>
+                @else
+                    <dd class="text-gray-800">{{ $recorrida->estadoFenologico?->nombre ?? $sinDato }}</dd>
+                @endif
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-gray-500">{{ __('recorridas.detalle.resumen.horario') }}</dt>

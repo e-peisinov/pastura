@@ -13,6 +13,7 @@ use App\Models\Configuracion;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\CurvaBiomasa;
 use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -47,7 +48,7 @@ class TableroTest extends TestCase
         $this->juan = User::factory()->create(['name' => 'Juan Pérez', 'rol' => Rol::Recorredor]);
         $this->campo = Campo::factory()->create(['nombre' => 'La Esperanza']);
         $this->alfalfa = TipoPastura::factory()->create([
-            'nombre' => 'Alfalfa', 'altura_ingreso_cm' => 20, 'altura_salida_cm' => 7, 'biomasa_a' => 100, 'biomasa_b' => 0,
+            'nombre' => 'Alfalfa', 'altura_ingreso_cm' => 20, 'altura_salida_cm' => 7,
         ]);
     }
 
@@ -58,9 +59,16 @@ class TableroTest extends TestCase
         parent::tearDown();
     }
 
+    /** Los de alfalfa tienen su curva vigente: kg = 100 × h (P23). */
     private function potrero(string $nombre, ?TipoPastura $tipo = null): Potrero
     {
-        return Potrero::factory()->conContorno()->for($this->campo)->create(['nombre' => $nombre, 'tipo_pastura_id' => ($tipo ?? $this->alfalfa)->id]);
+        $potrero = Potrero::factory()->conContorno()->for($this->campo)->create(['nombre' => $nombre, 'tipo_pastura_id' => ($tipo ?? $this->alfalfa)->id]);
+
+        if ($tipo === null) {
+            CurvaBiomasa::factory()->recta(100, 0)->create(['potrero_id' => $potrero->id]);
+        }
+
+        return $potrero;
     }
 
     /** @param  list<float>  $alturas */

@@ -34,10 +34,12 @@ return [
         'ver_todo' => 'Ver todo',
     ],
 
-    // <x-ui.grafico-columnas> (§11).
+    // <x-ui.grafico-columnas> y <x-ui.grafico-dispersion> (§11).
     'grafico' => [
         'ver_tabla' => 'Ver tabla',
         'periodo' => 'Período',
+        'puntos' => 'Puntos',
+        'recta' => 'Recta ajustada',
     ],
 
     'combobox' => [

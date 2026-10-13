@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
  *
  * Cuentan las recorridas activas con algún punto activo (regla 1): una
  * anulada o con todo descartado no es una medición. Los kg MS/ha salen de la
- * fórmula vigente del tipo de pastura (P16).
+ * curva de biomasa vigente del potrero para el estado de cada recorrida (P23).
  */
 final class Reportes
 {

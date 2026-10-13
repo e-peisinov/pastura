@@ -4,6 +4,8 @@ namespace Tests\Feature\Sincronizacion;
 
 use App\Enums\Nivel;
 use App\Models\Campo;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
@@ -35,7 +37,7 @@ class RecorridasApiTest extends TestCase
         $this->juan = User::factory()->create(['name' => 'Juan Pérez']);
         $this->lote4 = Potrero::factory()->conContorno()
             ->for(Campo::factory()->create(['nombre' => 'La Esperanza', 'localidad' => 'Río Cuarto']))
-            ->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => TipoPastura::factory()->create(['nombre' => 'Alfalfa', 'biomasa_a' => 25.5, 'biomasa_b' => -100])->id]);
+            ->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => TipoPastura::factory()->create(['nombre' => 'Alfalfa'])->id]);
     }
 
     private function cuerpo(?array $mediciones = null, array $extra = []): array
@@ -81,13 +83,42 @@ class RecorridasApiTest extends TestCase
         $respuesta->assertJsonPath('campos.0.localidad', 'Río Cuarto')
             ->assertJsonPath('campos.0.potreros.1.id', $this->lote4->id)
             ->assertJsonPath('campos.0.potreros.1.tipo_pastura', 'Alfalfa')
-            // La fórmula de kg MS/ha la pone el panel (P16); sin tipo o sin fórmula, null.
-            ->assertJsonPath('campos.0.potreros.1.formula_kg_ms_ha', ['a' => 25.5, 'b' => -100])
-            ->assertJsonPath('campos.0.potreros.0.formula_kg_ms_ha', null)
+            // Sin curvas, la lista vacía (P23); la fórmula del tipo ya no viaja.
+            ->assertJsonPath('campos.0.potreros.0.curvas', [])
+            ->assertJsonMissingPath('campos.0.potreros.1.formula_kg_ms_ha')
             ->assertJsonPath('campos.0.potreros.1.contorno.type', 'Polygon')
             ->assertJsonPath('campos.0.potreros.0.contorno', null)
             ->assertJsonPath('campos.0.potreros.0.superficie_ha', null);
         $this->assertEqualsWithDelta(round($this->lote4->superficieHa(), 2), $respuesta->json('campos.0.potreros.1.superficie_ha'), 0.001);
+    }
+
+    /**
+     * P23: los estados activos (en el orden en que se cargaron) y, en cada
+     * potrero, la recta de sus curvas vigentes por estado. Una reemplazada no
+     * viaja. Con muestras sobre kg = 25,5 × h − 100: a = 25,5 y b = −100.
+     */
+    public function test_el_catalogo_trae_los_estados_y_las_curvas_vigentes(): void
+    {
+        $rebrote = EstadoFenologico::factory()->create(['nombre' => 'Rebrote']);
+        $primavera = EstadoFenologico::factory()->create(['nombre' => 'Pleno crecimiento']);
+        EstadoFenologico::factory()->inactivo()->create(['nombre' => 'Viejo']);
+        CurvaBiomasa::factory()->recta(10, 0)->reemplazada()->create(['potrero_id' => $this->lote4->id, 'estado_fenologico_id' => $rebrote->id]);
+        CurvaBiomasa::factory()->recta(25.5, -100)->create(['potrero_id' => $this->lote4->id, 'estado_fenologico_id' => $rebrote->id]);
+        CurvaBiomasa::factory()->recta(40, 200)->create(['potrero_id' => $this->lote4->id, 'estado_fenologico_id' => $primavera->id]);
+        Sanctum::actingAs($this->juan);
+
+        $respuesta = $this->getJson('/api/v1/campos')->assertOk();
+
+        $respuesta->assertJsonPath('estados_fenologicos', [
+            ['id' => $rebrote->id, 'nombre' => 'Rebrote'],
+            ['id' => $primavera->id, 'nombre' => 'Pleno crecimiento'],
+        ]);
+        $curvas = collect($respuesta->json('campos.0.potreros.0.curvas'))->keyBy('estado_fenologico_id');
+        $this->assertCount(2, $curvas);
+        $this->assertEqualsWithDelta(25.5, $curvas[$rebrote->id]['a'], 0.001);
+        $this->assertEqualsWithDelta(-100, $curvas[$rebrote->id]['b'], 0.1);
+        $this->assertEqualsWithDelta(40, $curvas[$primavera->id]['a'], 0.001);
+        $this->assertEqualsWithDelta(200, $curvas[$primavera->id]['b'], 0.1);
     }
 
     // ----- Subida -----------------------------------------------------------

@@ -182,7 +182,10 @@ class Auditoria extends Model
                 : null,
             EntidadAuditada::Potrero, EntidadAuditada::Campo => route('campos'),
             EntidadAuditada::Usuario => route('admin.usuarios'),
-            EntidadAuditada::TipoPastura, EntidadAuditada::Configuracion => route('configuracion'),
+            EntidadAuditada::TipoPastura, EntidadAuditada::Configuracion, EntidadAuditada::EstadoFenologico => route('configuracion'),
+            EntidadAuditada::CurvaBiomasa => isset($datos['potrero_id']) && Potrero::query()->whereKey($datos['potrero_id'])->exists()
+                ? route('curvas', ['potrero' => $datos['potrero_id'], 'vigencia' => 'todas'])
+                : route('curvas'),
         };
     }
 }

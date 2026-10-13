@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sincronizacion;
 
 use App\Models\Campo;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
@@ -246,6 +247,36 @@ class SincronizadorRecorridasTest extends TestCase
         // APP_TIMEZONE = America/Argentina/Buenos_Aires (UTC−3).
         $this->assertSame('2026-10-10 09:12:00', Recorrida::sole()->getRawOriginal('iniciada_en'));
         $this->assertSame('2026-10-10 09:13:05', Medicion::sole()->getRawOriginal('tomada_en'));
+    }
+
+    /** P23: el estado que eligió el recorredor viaja con la recorrida; uno desactivado mientras tanto se acepta igual. */
+    public function test_guarda_el_estado_fenologico_de_la_recorrida(): void
+    {
+        $rebrote = EstadoFenologico::factory()->create();
+        $desactivado = EstadoFenologico::factory()->inactivo()->create();
+
+        $this->sincronizador->sincronizar($this->juan, self::RECORRIDA, $this->datos([$this->punto(self::PUNTO_1, 10.0)], ['estado_fenologico_id' => $rebrote->id]));
+        $this->assertSame($rebrote->id, Recorrida::sole()->estado_fenologico_id);
+
+        $this->sincronizador->sincronizar($this->juan, self::RECORRIDA, $this->datos([$this->punto(self::PUNTO_1, 10.0)], ['estado_fenologico_id' => $desactivado->id]));
+        $this->assertSame($desactivado->id, Recorrida::sole()->estado_fenologico_id);
+    }
+
+    /** Una app de antes de P23 no manda el estado: no se borra el que la recorrida ya tenía. */
+    public function test_sin_el_dato_no_toca_el_estado(): void
+    {
+        $rebrote = EstadoFenologico::factory()->create();
+        $this->sincronizador->sincronizar($this->juan, self::RECORRIDA, $this->datos([$this->punto(self::PUNTO_1, 10.0)], ['estado_fenologico_id' => $rebrote->id]));
+
+        $this->sincronizador->sincronizar($this->juan, self::RECORRIDA, $this->datos([$this->punto(self::PUNTO_2, 12.0)]));
+
+        $this->assertSame($rebrote->id, Recorrida::sole()->estado_fenologico_id);
+    }
+
+    public function test_rechaza_un_estado_que_no_existe(): void
+    {
+        $this->assertRechazado('estado_fenologico_id', $this->datos([$this->punto(self::PUNTO_1, 10.0)], ['estado_fenologico_id' => 999]));
+        $this->assertSame(0, Recorrida::count());
     }
 
     private function assertRechazado(string $dato, array $datos): void

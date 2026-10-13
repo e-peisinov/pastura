@@ -23,6 +23,8 @@ return [
         'usuario' => 'Usuario',
         'tipo_pastura' => 'Tipo de pastura',
         'configuracion' => 'Parámetros',
+        'estado_fenologico' => 'Estado de la pastura',
+        'curva_biomasa' => 'Curva de biomasa',
     ],
     'estado_potrero' => [
         'listo' => 'Listo para pastorear',

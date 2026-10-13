@@ -2,6 +2,7 @@
 
 namespace App\Support\Recorridas;
 
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
@@ -17,7 +18,8 @@ use Illuminate\Validation\ValidationException;
  * una transacción: o entra todo o no entra nada.
  *
  * Recibe los datos ya validados en su forma (SubirRecorridaRequest); acá van
- * las reglas de negocio. `activo` nunca se toca: lo decide el panel.
+ * las reglas de negocio. `activo` nunca se toca: lo decide el panel. El
+ * estado fenológico (P23) se pisa solo si viene: una app de antes no lo manda.
  */
 class SincronizadorRecorridas
 {
@@ -39,7 +41,7 @@ class SincronizadorRecorridas
      * @return array{creada: bool, mediciones: array{creadas: int, actualizadas: int, total: int}}
      *
      * @throws AuthorizationException si el uuid es de una recorrida de otro usuario
-     * @throws ValidationException si el potrero no está activo o una medición es de otra recorrida
+     * @throws ValidationException si el potrero no está activo, el estado no existe o una medición es de otra recorrida
      */
     public function sincronizar(User $usuario, string $uuid, array $datos): array
     {
@@ -52,6 +54,7 @@ class SincronizadorRecorridas
             }
 
             $this->exigirPotreroActivo((int) $datos['potrero_id']);
+            $this->exigirEstadoExistente($datos['estado_fenologico_id'] ?? null);
 
             $creada = $recorrida === null;
             $recorrida ??= new Recorrida(['uuid' => $uuid, 'user_id' => $usuario->id]);
@@ -60,7 +63,11 @@ class SincronizadorRecorridas
                 'iniciada_en' => $this->horaLocal($datos['iniciada_en']),
                 'dispositivo' => $datos['dispositivo'] ?? null,
                 'observaciones' => $datos['observaciones'] ?? null,
-            ])->save();
+            ]);
+            if (array_key_exists('estado_fenologico_id', $datos)) {
+                $recorrida->estado_fenologico_id = $datos['estado_fenologico_id'] === null ? null : (int) $datos['estado_fenologico_id'];
+            }
+            $recorrida->save();
 
             $creadas = 0;
             $actualizadas = 0;
@@ -105,6 +112,14 @@ class SincronizadorRecorridas
 
         if (! $activo) {
             throw ValidationException::withMessages(['potrero_id' => __('api.potrero_inactivo')]);
+        }
+    }
+
+    /** Un estado que se desactivó mientras el recorredor estaba en el campo se acepta igual. */
+    private function exigirEstadoExistente(mixed $estadoId): void
+    {
+        if ($estadoId !== null && ! EstadoFenologico::query()->whereKey((int) $estadoId)->exists()) {
+            throw ValidationException::withMessages(['estado_fenologico_id' => __('api.estado_inexistente')]);
         }
     }
 

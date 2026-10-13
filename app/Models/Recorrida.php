@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EntidadAuditada;
 use App\Models\Traits\Auditable;
+use App\Support\Biomasa\RectaBiomasa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,8 +18,9 @@ use Illuminate\Support\Facades\DB;
  * Una salida de un recorredor a un potrero (glosario). La sube la app de
  * campo con su uuid (P4). Lo que se muestra (puntos, altura media, kg MS/ha
  * medio) se calcula de las mediciones activas, nunca se guarda (regla 8).
- * Los kg MS/ha salen de la fórmula vigente del tipo de pastura del potrero,
- * punto por punto (P16), no de lo que mandó el celular.
+ * Los kg MS/ha salen de la curva de biomasa vigente del potrero para el
+ * estado fenológico que eligió el recorredor, punto por punto (P23), no de
+ * lo que mandó el celular.
  */
 class Recorrida extends Model
 {
@@ -27,6 +29,7 @@ class Recorrida extends Model
     protected $fillable = [
         'uuid',
         'potrero_id',
+        'estado_fenologico_id',
         'user_id',
         'iniciada_en',
         'dispositivo',
@@ -53,15 +56,19 @@ class Recorrida extends Model
         return EntidadAuditada::Recorrida;
     }
 
-    /** La subida (alta y cambios de la app) no se audita: sí anularla y moverla. */
+    /** La subida (alta y cambios de la app) no se audita: sí anularla, moverla y cambiarle el estado (cambia los kg, P23). */
     protected function camposAuditados(): array
     {
-        return ['activo', 'potrero_id'];
+        return ['activo', 'potrero_id', 'estado_fenologico_id'];
     }
 
     protected function valorParaAuditoria(string $campo, mixed $valor): mixed
     {
-        return $campo === 'potrero_id' ? Potrero::query()->find($valor)?->nombreCompleto() : $this->valorAuditableComun($valor);
+        return match ($campo) {
+            'potrero_id' => Potrero::query()->find($valor)?->nombreCompleto(),
+            'estado_fenologico_id' => EstadoFenologico::query()->find($valor)?->nombre,
+            default => $this->valorAuditableComun($valor),
+        };
     }
 
     /** @return array<string, mixed> */
@@ -97,6 +104,23 @@ class Recorrida extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function estadoFenologico(): BelongsTo
+    {
+        return $this->belongsTo(EstadoFenologico::class);
+    }
+
+    /** La curva vigente de su potrero para su estado (P23), o null. */
+    public function curvaBiomasa(): ?CurvaBiomasa
+    {
+        return CurvaBiomasa::vigentePara($this->potrero_id, $this->estado_fenologico_id);
+    }
+
+    /** La recta con la que se calculan sus kg MS/ha; null = sin kilos. */
+    public function recta(): ?RectaBiomasa
+    {
+        return $this->curvaBiomasa()?->recta();
+    }
+
     public function mediciones(): HasMany
     {
         return $this->hasMany(Medicion::class);
@@ -129,18 +153,33 @@ class Recorrida extends Model
     }
 
     /**
-     * avg(max(0, A × altura + B)) de los puntos activos, con la fórmula del
-     * tipo de pastura del potrero. Sin tipo o sin fórmula, null. El CASE
-     * (y no GREATEST) corre igual en MySQL y en el SQLite de los tests.
+     * avg(max(0, A × altura + B)) de los puntos activos, con la recta de la
+     * curva vigente del potrero para el estado de la recorrida (P23). La
+     * recta se ajusta acá mismo por mínimos cuadrados con las sumas de las
+     * muestras (la misma cuenta que RectaBiomasa::ajustar): sin curva, sin
+     * estado o sin dos alturas distintas, null. Los gramos pasan a kg/ha con
+     * el área del disco (× 10 / m²). El CASE (y no GREATEST) y el `* 1.0`
+     * (que la división no sea entera) corren igual en MySQL y en SQLite.
      */
     private static function subconsultaKg(): QueryBuilder
     {
-        $kg = 'tp.biomasa_a * mediciones.altura_cm + tp.biomasa_b';
+        $porGramo = sprintf('%.10F', 10 / Configuracion::instancia()->area_disco_m2);
+
+        $sumas = DB::table('muestras_curva')
+            ->groupBy('curva_biomasa_id')
+            ->selectRaw('curva_biomasa_id, count(*) as n, sum(altura_cm) as sx, sum(peso_seco_g) as sy, sum(altura_cm * altura_cm) as sxx, sum(altura_cm * peso_seco_g) as sxy');
+
+        $a = '((s.n * s.sxy - s.sx * s.sy) * 1.0 / nullif(s.n * s.sxx - s.sx * s.sx, 0))';
+        $b = "((s.sy - {$a} * s.sx) * 1.0 / s.n)";
+        $kg = "({$a} * mediciones.altura_cm + {$b}) * {$porGramo}";
 
         return DB::table('mediciones')
             ->join('recorridas as r', 'r.id', '=', 'mediciones.recorrida_id')
-            ->join('potreros as p', 'p.id', '=', 'r.potrero_id')
-            ->join('tipos_pastura as tp', 'tp.id', '=', 'p.tipo_pastura_id')
+            ->join('curvas_biomasa as c', fn ($join) => $join
+                ->on('c.potrero_id', '=', 'r.potrero_id')
+                ->on('c.estado_fenologico_id', '=', 'r.estado_fenologico_id')
+                ->where('c.activo', true))
+            ->joinSub($sumas, 's', 's.curva_biomasa_id', '=', 'c.id')
             ->selectRaw("avg(case when {$kg} < 0 then 0 else {$kg} end)")
             ->whereColumn('mediciones.recorrida_id', 'recorridas.id')
             ->where('mediciones.activo', true);
@@ -173,9 +212,9 @@ class Recorrida extends Model
                 return $valor === null ? null : (float) $valor;
             }
 
-            $tipo = $this->potrero?->tipoPastura;
+            $recta = $this->recta();
             $kgs = $this->mediciones()->where('activo', true)->get()
-                ->map(fn (Medicion $medicion) => $medicion->kgMsHaSegun($tipo))
+                ->map(fn (Medicion $medicion) => $medicion->kgMsHaSegun($recta))
                 ->filter(fn (?float $kg) => $kg !== null);
 
             return $kgs->isEmpty() ? null : (float) $kgs->avg();

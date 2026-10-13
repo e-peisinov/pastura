@@ -7,5 +7,6 @@ return [
     'recorrida_ajena' => 'Esta recorrida pertenece a otro usuario.',
     'medicion_ajena' => 'Esta medición ya pertenece a otra recorrida.',
     'potrero_inactivo' => 'El potrero no existe o está dado de baja (o lo está su campo).',
+    'estado_inexistente' => 'El estado de la pastura no existe en el panel. Actualice los campos en la app y vuelva a elegirlo.',
     'enlace_vencido' => 'El enlace para entrar al panel venció o ya se usó. Vuelva a tocar Ir al panel en la app, o ingrese con su contraseña.',
 ];

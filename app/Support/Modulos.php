@@ -27,6 +27,7 @@ final class Modulos
         return [
             new Modulo('tablero', 'dashboard', 'fa-gauge-high', tecla: 't'),
             new Modulo('campos', 'campos', 'fa-map-location-dot', tecla: 'c'),
+            new Modulo('curvas', 'curvas', 'fa-chart-line', tecla: 'b'),
             new Modulo('recorridas', 'recorridas', 'fa-route', Nivel::Editar, tecla: 'r'),
             new Modulo('reportes', 'reportes', 'fa-chart-column', Nivel::SinAcceso, tecla: 'p'),
             new Modulo('usuarios', 'admin.usuarios', 'fa-user-gear', Nivel::SinAcceso, tecla: 'u'),

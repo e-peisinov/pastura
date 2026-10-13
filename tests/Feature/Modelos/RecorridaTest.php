@@ -3,10 +3,12 @@
 namespace Tests\Feature\Modelos;
 
 use App\Models\Campo;
+use App\Models\Configuracion;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
-use App\Models\TipoPastura;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,12 +20,21 @@ class RecorridaTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Los kg que guardó el celular (`$kgs`) no cuentan: el panel los calcula con la fórmula del tipo (P16). */
-    private function recorridaCon(array $alturas, ?TipoPastura $tipo = null, array $kgs = []): Recorrida
+    /**
+     * Los kg que guardó el celular (`$kgs`) no cuentan: el panel los calcula
+     * con la curva vigente del potrero para el estado de la recorrida (P23).
+     * `$recta` = [A, B] arma esa curva con muestras justo sobre la recta.
+     */
+    private function recorridaCon(array $alturas, ?array $recta = null, array $kgs = []): Recorrida
     {
-        $recorrida = Recorrida::factory()
-            ->for(Potrero::factory()->create(['tipo_pastura_id' => $tipo?->id]))
-            ->create();
+        $potrero = Potrero::factory()->create();
+        $estado = EstadoFenologico::factory()->create();
+
+        if ($recta !== null) {
+            CurvaBiomasa::factory()->recta(...$recta)->create(['potrero_id' => $potrero->id, 'estado_fenologico_id' => $estado->id]);
+        }
+
+        $recorrida = Recorrida::factory()->for($potrero)->create(['estado_fenologico_id' => $estado->id]);
 
         foreach ($alturas as $i => $altura) {
             Medicion::factory()->for($recorrida)->create([
@@ -39,8 +50,7 @@ class RecorridaTest extends TestCase
     /** 10 + 12,5 + 14 = 36,5 / 3 = 12,17 cm; kg = 100 × h + 900: (1900 + 2150 + 2300) / 3 = 2116,67. */
     public function test_el_resumen_promedia_las_mediciones(): void
     {
-        $tipo = TipoPastura::factory()->create(['biomasa_a' => 100, 'biomasa_b' => 900]);
-        $recorrida = $this->recorridaCon([10, 12.5, 14], $tipo, [1, 2, 3]);
+        $recorrida = $this->recorridaCon([10, 12.5, 14], [100, 900], [1, 2, 3]);
 
         $r = Recorrida::query()->conResumen()->findOrFail($recorrida->id);
 
@@ -55,24 +65,56 @@ class RecorridaTest extends TestCase
      */
     public function test_los_kg_de_cada_punto_se_acotan_en_cero_antes_de_promediar(): void
     {
-        $tipo = TipoPastura::factory()->create(['biomasa_a' => 25, 'biomasa_b' => -100]);
-        $recorrida = $this->recorridaCon([12, 20, 2], $tipo, [9999, 9999, 9999]);
+        $recorrida = $this->recorridaCon([12, 20, 2], [25, -100], [9999, 9999, 9999]);
 
         $this->assertEqualsWithDelta(200.0, Recorrida::query()->conResumen()->findOrFail($recorrida->id)->kg_ms_ha_medio, 0.005);
         $this->assertEqualsWithDelta(200.0, $recorrida->fresh()->kg_ms_ha_medio, 0.005);
     }
 
-    /** P16: la fórmula vigente recalcula también las recorridas anteriores. */
-    public function test_cambiar_la_formula_recalcula_la_historia(): void
+    /**
+     * La recta sale de las muestras, que no caen justo sobre una recta:
+     * (5, 8 g), (10, 14 g), (15, 17 g), (20, 25 g) con el disco de 0,10 m²
+     * son 800, 1400, 1700 y 2500 kg → A = 108, B = 250 (RectaBiomasaTest).
+     * Puntos a 12 y 1 cm: (1546 + 358) / 2 = 952, en SQL y en PHP.
+     */
+    public function test_la_subconsulta_y_el_accessor_ajustan_la_misma_recta(): void
     {
-        $tipo = TipoPastura::factory()->create(['biomasa_a' => 100, 'biomasa_b' => 0]);
-        $recorrida = $this->recorridaCon([10, 20], $tipo);
+        $recorrida = $this->recorridaCon([12, 1]);
+        $curva = CurvaBiomasa::factory()->create([
+            'potrero_id' => $recorrida->potrero_id,
+            'estado_fenologico_id' => $recorrida->estado_fenologico_id,
+        ]);
+        foreach ([[5, 8], [10, 14], [15, 17], [20, 25]] as [$altura, $peso]) {
+            $curva->muestras()->create(['altura_cm' => $altura, 'peso_seco_g' => $peso]);
+        }
+
+        $this->assertEqualsWithDelta(952.0, Recorrida::query()->conResumen()->findOrFail($recorrida->id)->kg_ms_ha_medio, 0.005);
+        $this->assertEqualsWithDelta(952.0, $recorrida->fresh()->kg_ms_ha_medio, 0.005);
+    }
+
+    /** P23: la curva vigente recalcula también las recorridas anteriores. */
+    public function test_una_curva_nueva_recalcula_la_historia(): void
+    {
+        $recorrida = $this->recorridaCon([10, 20], [100, 0]);
         $this->assertEqualsWithDelta(1500.0, $recorrida->fresh()->kg_ms_ha_medio, 0.005);
 
-        // 80 × 10 + 500 = 1300; 80 × 20 + 500 = 2100 → (1300 + 2100) / 2 = 1700.
-        $tipo->update(['biomasa_a' => 80, 'biomasa_b' => 500]);
+        // La nueva reemplaza a la anterior: 80 × 10 + 500 = 1300; 80 × 20 + 500 = 2100 → 1700.
+        CurvaBiomasa::factory()->recta(80, 500)->create([
+            'potrero_id' => $recorrida->potrero_id,
+            'estado_fenologico_id' => $recorrida->estado_fenologico_id,
+        ]);
         $this->assertEqualsWithDelta(1700.0, Recorrida::query()->conResumen()->findOrFail($recorrida->id)->kg_ms_ha_medio, 0.005);
         $this->assertEqualsWithDelta(1700.0, $recorrida->fresh()->kg_ms_ha_medio, 0.005);
+    }
+
+    /** El área del disco entra en cada muestra: con 0,20 m² los mismos gramos son la mitad de kilos. */
+    public function test_cambiar_el_area_del_disco_recalcula_los_kilos(): void
+    {
+        $recorrida = $this->recorridaCon([10, 20], [100, 0]);
+        Configuracion::factory()->create(['area_disco_m2' => 0.20]);
+
+        $this->assertEqualsWithDelta(750.0, Recorrida::query()->conResumen()->findOrFail($recorrida->id)->kg_ms_ha_medio, 0.005);
+        $this->assertEqualsWithDelta(750.0, $recorrida->fresh()->kg_ms_ha_medio, 0.005);
     }
 
     /** Un punto descartado (40 cm, error de lectura) no entra: (10 + 14) / 2 = 12 cm. */
@@ -87,13 +129,28 @@ class RecorridaTest extends TestCase
         $this->assertEqualsWithDelta(12.0, $r->altura_media, 0.005);
     }
 
-    /** Sin tipo de pastura o sin fórmula el promedio de biomasa queda vacío, no en cero, aunque el celular haya mandado kg. */
-    public function test_sin_formula_el_promedio_es_nulo(): void
+    /**
+     * Sin curva vigente para ese potrero y ese estado el promedio de biomasa
+     * queda vacío, no en cero, aunque el celular haya mandado kg (P23: no hay
+     * fórmula de respaldo).
+     */
+    public function test_sin_curva_vigente_el_promedio_es_nulo(): void
     {
-        $sinTipo = $this->recorridaCon([10, 12], null, [1500, 1600]);
-        $sinFormula = $this->recorridaCon([10, 12], TipoPastura::factory()->sinFormula()->create(), [1500, 1600]);
+        $sinCurva = $this->recorridaCon([10, 12], null, [1500, 1600]);
 
-        foreach ([$sinTipo, $sinFormula] as $recorrida) {
+        $deOtroEstado = $this->recorridaCon([10, 12], null, [1500, 1600]);
+        CurvaBiomasa::factory()->recta(100, 0)->create(['potrero_id' => $deOtroEstado->potrero_id]);
+
+        $deOtroPotrero = $this->recorridaCon([10, 12], null, [1500, 1600]);
+        CurvaBiomasa::factory()->recta(100, 0)->create(['estado_fenologico_id' => $deOtroPotrero->estado_fenologico_id]);
+
+        $reemplazada = $this->recorridaCon([10, 12], [100, 0], [1500, 1600]);
+        CurvaBiomasa::query()->where('potrero_id', $reemplazada->potrero_id)->update(['activo' => false]);
+
+        $sinEstado = $this->recorridaCon([10, 12], [100, 0], [1500, 1600]);
+        $sinEstado->update(['estado_fenologico_id' => null]);
+
+        foreach ([$sinCurva, $deOtroEstado, $deOtroPotrero, $reemplazada, $sinEstado] as $recorrida) {
             $this->assertNull(Recorrida::query()->conResumen()->findOrFail($recorrida->id)->kg_ms_ha_medio);
             $this->assertNull($recorrida->fresh()->kg_ms_ha_medio);
         }

@@ -44,7 +44,7 @@ class PermisosTest extends TestCase
         $recorredor = User::factory()->create();
 
         $esperado = [
-            'tablero' => Nivel::Ver, 'campos' => Nivel::Ver,
+            'tablero' => Nivel::Ver, 'campos' => Nivel::Ver, 'curvas' => Nivel::Ver,
             'recorridas' => Nivel::Editar, 'reportes' => Nivel::SinAcceso, 'usuarios' => Nivel::SinAcceso,
             'configuracion' => Nivel::SinAcceso, 'auditoria' => Nivel::SinAcceso,
         ];

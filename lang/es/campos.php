@@ -27,6 +27,7 @@ return [
     'sin_superficie' => 'Sin contorno',
     'nunca' => 'Nunca',
     'detalle' => [
+        'curvas' => 'Curvas de biomasa',
         'mapa' => 'Mapa',
         'potreros' => 'Potreros',
         'agregar_potrero' => 'Agregar potrero',
@@ -58,7 +59,7 @@ return [
             'observaciones' => 'Observaciones',
             'contorno' => 'Contorno',
         ],
-        'ayuda_tipo_pastura' => 'Sus alturas de referencia y su fórmula de kg MS/ha se cargan en Configuración.',
+        'ayuda_tipo_pastura' => 'Sus alturas de referencia se cargan en Configuración. Los kg MS/ha salen de las curvas de biomasa del potrero.',
         'sin_tipo_pastura' => 'Sin tipo de pastura',
         'ayuda_contorno' => 'Dibuje el contorno con las herramientas del mapa (polígono o rectángulo) o importe un archivo KML o KMZ de Google Earth. Los otros potreros del campo se ven punteados.',
         'importar' => 'Importar KML / KMZ',

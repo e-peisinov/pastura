@@ -68,14 +68,14 @@ class ModulosTest extends TestCase
             $this->assertStringStartsWith('fa-', $modulo->icono);
         }
 
-        $this->assertSame(['tablero', 'campos', 'recorridas', 'reportes', 'usuarios', 'configuracion', 'auditoria'], Modulos::nombres());
+        $this->assertSame(['tablero', 'campos', 'curvas', 'recorridas', 'reportes', 'usuarios', 'configuracion', 'auditoria'], Modulos::nombres());
         $this->assertSame($this->nombres($todos), Modulos::nombres());
         $this->assertSame('usuarios', Modulos::porNombre('usuarios')?->nombre);
         $this->assertSame('admin.usuarios', Modulos::porNombre('usuarios')->ruta);
 
         // Todos ya tienen ruta: el administrador los ve todos.
         $admin = User::factory()->admin()->create();
-        $this->assertSame(['tablero', 'campos', 'recorridas', 'reportes', 'usuarios', 'configuracion', 'auditoria'], $this->nombres(Modulos::visibles($admin)));
+        $this->assertSame(['tablero', 'campos', 'curvas', 'recorridas', 'reportes', 'usuarios', 'configuracion', 'auditoria'], $this->nombres(Modulos::visibles($admin)));
         $this->assertNull(Modulos::porNombre('inexistente'));
     }
 

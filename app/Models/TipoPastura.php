@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * La pastura de un potrero (glosario, P16): sus alturas de referencia y su
- * fórmula de kg MS/ha. Se administra en Configuración.
+ * La pastura de un potrero (glosario, P16): sus alturas de referencia. Los
+ * kg MS/ha ya no son del tipo sino de las curvas de cada potrero (P23). Se
+ * administra en Configuración.
  */
 class TipoPastura extends Model
 {
@@ -23,8 +24,6 @@ class TipoPastura extends Model
         'nombre',
         'altura_ingreso_cm',
         'altura_salida_cm',
-        'biomasa_a',
-        'biomasa_b',
         'activo',
     ];
 
@@ -37,13 +36,11 @@ class TipoPastura extends Model
         return [
             'altura_ingreso_cm' => 'float',
             'altura_salida_cm' => 'float',
-            'biomasa_a' => 'float',
-            'biomasa_b' => 'float',
             'activo' => 'boolean',
         ];
     }
 
-    // ----- Auditoría (P18): todo, porque cambia los kg y los estados ---------
+    // ----- Auditoría (P18): todo, porque cambia los estados del tablero -----
 
     public static function entidadAuditada(): EntidadAuditada
     {
@@ -52,7 +49,7 @@ class TipoPastura extends Model
 
     protected function camposAuditados(): array
     {
-        return ['nombre', 'altura_ingreso_cm', 'altura_salida_cm', 'biomasa_a', 'biomasa_b', 'activo'];
+        return ['nombre', 'altura_ingreso_cm', 'altura_salida_cm', 'activo'];
     }
 
     protected function auditaAlta(): bool
@@ -90,20 +87,5 @@ class TipoPastura extends Model
     public function tieneAlturas(): bool
     {
         return $this->altura_ingreso_cm !== null && $this->altura_salida_cm !== null;
-    }
-
-    public function tieneFormula(): bool
-    {
-        return $this->biomasa_a !== null && $this->biomasa_b !== null;
-    }
-
-    /** kg MS/ha = max(0, A × altura + B) con la fórmula vigente (P16). Sin fórmula, null. */
-    public function kgMsHa(float $alturaCm): ?float
-    {
-        if (! $this->tieneFormula()) {
-            return null;
-        }
-
-        return max(0.0, $this->biomasa_a * $alturaCm + $this->biomasa_b);
     }
 }

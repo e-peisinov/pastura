@@ -4,6 +4,9 @@ namespace Database\Seeders;
 
 use App\Enums\Rol;
 use App\Models\Campo;
+use App\Models\Configuracion;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
@@ -11,22 +14,26 @@ use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Set de demo para el video y las presentaciones: dos campos vecinos en
  * Ayacucho (Estancia La Aurora y El Mirador) con los contornos sobre lotes
- * reales de la imagen satelital, cuatro tipos de pastura con alturas y
- * fórmula, tres usuarios y unos seis meses de recorridas. NO va en
- * DatabaseSeeder: se corre a mano y solo agrega datos.
+ * reales de la imagen satelital, cuatro tipos de pastura con alturas, los
+ * estados de la pastura, una curva de biomasa por potrero y estado (P23),
+ * tres usuarios y unos seis meses de recorridas. NO va en DatabaseSeeder: se
+ * corre a mano y solo agrega datos.
  *
  *   php artisan db:seed --class=DemoSeeder
  *
  * Las fechas son relativas a hoy, así el tablero queda con potreros en cada
  * estado (listos, en crecimiento, bajo el remanente, uno nunca medido, dos
  * sin medir hace más de una semana) y tres recorridas para revisar (pocos
- * puntos, sin GPS, un punto fuera del contorno). Volver a correrlo
- * reemplaza solo sus recorridas, que se reconocen por el uuid.
+ * puntos, sin GPS, un punto fuera del contorno). Cada recorrida tiene el
+ * estado que corresponde a su altura, y El Monte no tiene curvas: así se ve
+ * una recorrida sin kg MS/ha. Volver a correrlo reemplaza solo sus
+ * recorridas (por el uuid) y las muestras de sus curvas.
  */
 class DemoSeeder extends Seeder
 {
@@ -38,7 +45,10 @@ class DemoSeeder extends Seeder
         'diego' => ['diego.ruiz@laaurora.test', 'Diego Ruiz', Rol::Recorredor],
     ];
 
-    /** Nombre => [ingreso cm, salida cm, A, B] (kg MS/ha = A × altura + B). */
+    /**
+     * Nombre => [ingreso cm, salida cm, A, B]. A y B son la recta de base de
+     * las curvas de demo (kg MS/ha = A × altura + B); cada estado la corre.
+     */
     private const TIPOS = [
         'Pastura consociada' => [20, 7, 115, 250],
         'Raigrás anual' => [18, 6, 125, 150],
@@ -70,6 +80,23 @@ class DemoSeeder extends Seeder
         ['El Mirador', 'Raigrás nuevo', 'Raigrás anual', [[-58.62911, -37.173377], [-58.625892, -37.175247], [-58.628698, -37.178336], [-58.631915, -37.176466]], null],
     ];
 
+    /**
+     * Cómo corre cada estado la recta del tipo: recién pastoreada el pasto es
+     * más denso por centímetro; en plena primavera se acuesta y pesa menos
+     * (lo que contó Mateo). Estado => [× A, × B].
+     */
+    private const ESTADOS = [
+        'Recién pastoreada' => [1.15, 0.5],
+        'Rebrote' => [1.0, 1.0],
+        'Pleno crecimiento' => [0.85, 1.3],
+    ];
+
+    /** Un potrero sin curvas, para mostrar una recorrida sin kilos. */
+    private const SIN_CURVAS = 'El Monte';
+
+    /** Las alturas de los cortes de cada curva: unas 15, como hace Mateo. */
+    private const ALTURAS_MUESTRAS = [4, 6, 7, 9, 10, 12, 13, 15, 16, 18, 20, 22, 24, 27, 30];
+
     /** Recorridas anteriores a la última, cada tantos días: unos seis meses. */
     private const ANTERIORES = 12;
 
@@ -80,9 +107,11 @@ class DemoSeeder extends Seeder
         mt_srand(7);
 
         DB::transaction(function () {
+            $this->call(EstadosFenologicosSeeder::class);
             $tipos = $this->tipos();
             $usuarios = $this->usuarios();
             $campos = $this->campos();
+            $estados = EstadoFenologico::query()->whereIn('nombre', array_keys(self::ESTADOS))->get()->keyBy('nombre');
 
             foreach (self::POTREROS as $n => [$campo, $nombre, $tipo, $anillo, $ultima]) {
                 $potrero = Potrero::query()->firstOrCreate(
@@ -91,7 +120,14 @@ class DemoSeeder extends Seeder
                 );
 
                 if ($ultima !== null) {
-                    $this->historial($n, $potrero, $ultima, $tipos[$tipo], $usuarios);
+                    $this->historial($n, $potrero, $ultima, $tipos[$tipo], $usuarios, $estados);
+                }
+            }
+
+            // Después de las recorridas, para no correr la secuencia de mt_rand (el tablero de demo queda igual).
+            foreach (self::POTREROS as $n => [$campo, $nombre, $tipo]) {
+                if ($nombre !== self::SIN_CURVAS) {
+                    $this->curvas($n, Potrero::query()->where('campo_id', $campos[$campo]->id)->where('nombre', $nombre)->sole(), $tipo, $estados);
                 }
             }
         });
@@ -107,8 +143,6 @@ class DemoSeeder extends Seeder
             $tipos[$nombre] = TipoPastura::query()->firstOrCreate(['nombre' => $nombre], [
                 'altura_ingreso_cm' => $ingreso,
                 'altura_salida_cm' => $salida,
-                'biomasa_a' => $a,
-                'biomasa_b' => $b,
             ]);
         }
 
@@ -152,8 +186,9 @@ class DemoSeeder extends Seeder
      *
      * @param  array{0: int, 1: float, 2: int, 3: string, 4: ?string}  $ultima
      * @param  array<string, User>  $usuarios
+     * @param  Collection<string, EstadoFenologico>  $estados
      */
-    private function historial(int $n, Potrero $potrero, array $ultima, TipoPastura $tipo, array $usuarios): void
+    private function historial(int $n, Potrero $potrero, array $ultima, TipoPastura $tipo, array $usuarios, Collection $estados): void
     {
         [$dias, $media, $puntos, $quien, $motivo] = $ultima;
         $uuids = array_map(fn (int $k) => self::uuid("demo-{$n}-{$k}"), range(0, self::ANTERIORES));
@@ -173,19 +208,69 @@ class DemoSeeder extends Seeder
             }
             $inicio = Carbon::today()->subDays($dias + self::CADA_DIAS * $k)->setTime(7 + $k % 3, 10 * ($n % 6));
 
+            $estado = self::estadoSegun((float) $altura, $tipo);
             $recorrida = Recorrida::query()->create([
                 'uuid' => $uuids[$k],
                 'potrero_id' => $potrero->id,
+                'estado_fenologico_id' => $estados[$estado]->id,
                 'user_id' => $usuarios[$esUltima ? $quien : $quienes[($n + $k) % 2 + 1]]->id,
                 'iniciada_en' => $inicio,
                 'dispositivo' => $esUltima && $quien === 'diego' ? 'Samsung Galaxy A15' : 'Motorola moto g54',
             ]);
 
-            $this->mediciones($recorrida, $inicio, (float) $altura, $esUltima ? $puntos : 20 + mt_rand(0, 6), $anillo, $tipo, $esUltima ? $motivo : null);
+            $this->mediciones($recorrida, $inicio, (float) $altura, $esUltima ? $puntos : 20 + mt_rand(0, 6), $anillo, self::recta($tipo->nombre, $estado), $esUltima ? $motivo : null);
         }
     }
 
-    private function mediciones(Recorrida $recorrida, Carbon $inicio, float $media, int $cantidad, array $anillo, TipoPastura $tipo, ?string $motivo): void
+    /** El estado que eligiría el recorredor al ver la pastura: cerca del remanente, recién pastoreada; pasada la de ingreso, en pleno crecimiento. */
+    private static function estadoSegun(float $altura, TipoPastura $tipo): string
+    {
+        return match (true) {
+            $altura < $tipo->altura_salida_cm + 4 => 'Recién pastoreada',
+            $altura >= $tipo->altura_ingreso_cm => 'Pleno crecimiento',
+            default => 'Rebrote',
+        };
+    }
+
+    /** [A, B] de la curva de demo de un tipo en un estado. */
+    private static function recta(string $tipo, string $estado): array
+    {
+        [, , $a, $b] = self::TIPOS[$tipo];
+        [$porA, $porB] = self::ESTADOS[$estado];
+
+        return [$a * $porA, $b * $porB];
+    }
+
+    /**
+     * Una curva vigente por estado, con 15 muestras alrededor de su recta
+     * (±8 %). El ruido sale del nombre del potrero, no de mt_rand: es el
+     * mismo cada vez y no corre la secuencia de las recorridas.
+     *
+     * @param  Collection<string, EstadoFenologico>  $estados
+     */
+    private function curvas(int $n, Potrero $potrero, string $tipo, Collection $estados): void
+    {
+        $area = Configuracion::instancia()->area_disco_m2;
+
+        foreach (array_keys(self::ESTADOS) as $e => $estado) {
+            [$a, $b] = self::recta($tipo, $estado);
+            $curva = CurvaBiomasa::query()->firstOrCreate(
+                ['potrero_id' => $potrero->id, 'estado_fenologico_id' => $estados[$estado]->id, 'observaciones' => 'Set de demo'],
+                ['fecha' => Carbon::today()->subDays(150 - 30 * $e - $n)->toDateString(), 'activo' => true],
+            );
+            $curva->muestras()->delete();
+
+            foreach (self::ALTURAS_MUESTRAS as $i => $altura) {
+                $ruido = (crc32("{$potrero->nombre}-{$estado}-{$i}") % 1601 - 800) / 10000;
+                $kg = max(50.0, ($a * $altura + $b) * (1 + $ruido));
+                // kg/ha = g / m² × 10 → g = kg × m² / 10.
+                $curva->muestras()->create(['altura_cm' => $altura, 'peso_seco_g' => round($kg * $area / 10, 2)]);
+            }
+        }
+    }
+
+    /** @param  array{0: float, 1: float}  $recta  lo que vio el celular: la curva del estado de la recorrida */
+    private function mediciones(Recorrida $recorrida, Carbon $inicio, float $media, int $cantidad, array $anillo, array $recta, ?string $motivo): void
     {
         $momento = $inicio->copy();
         for ($i = 0; $i < $cantidad; $i++) {
@@ -205,7 +290,7 @@ class DemoSeeder extends Seeder
                 'tomada_en' => $momento,
                 'altura_cm' => $altura,
                 'distancia_cm' => round(118 - $altura, 1),
-                'kg_ms_ha' => (int) max(0, round($tipo->biomasa_a * $altura + $tipo->biomasa_b)),
+                'kg_ms_ha' => (int) max(0, round($recta[0] * $altura + $recta[1])),
                 'latitud' => $sinGps ? null : round($lat, 7),
                 'longitud' => $sinGps ? null : round($lon, 7),
                 'precision_m' => $sinGps ? null : round(mt_rand(25, 90) / 10, 1),

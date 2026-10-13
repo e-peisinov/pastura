@@ -19,6 +19,7 @@ class ConfiguracionFactory extends Factory
             'color_acento' => ColorAcento::Green,
             'dias_sin_medir' => Configuracion::DIAS_SIN_MEDIR,
             'puntos_minimos' => Configuracion::PUNTOS_MINIMOS,
+            'area_disco_m2' => Configuracion::AREA_DISCO_M2,
         ];
     }
 }

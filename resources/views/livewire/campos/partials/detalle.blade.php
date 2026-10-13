@@ -77,16 +77,20 @@
                                 ? __('campos.detalle.ultima', ['fecha' => Formato::fecha($ultima->iniciada_en), 'altura' => Formato::numero($ultima->altura_media ?? 0, 1)])
                                 : __('campos.detalle.sin_recorridas') }}
                         </span>
-                        @if($puedeEditar)
-                            <div class="flex gap-1">
+                        <div class="flex gap-1">
+                            {{-- Las curvas de biomasa del potrero (P23), con Ver en Curvas --}}
+                            @if($verCurvas)
+                                <x-ui.accion icono="fa-chart-line" :etiqueta="__('campos.detalle.curvas')" :href="route('curvas', ['potrero' => $potrero->id])" data-curvas-potrero />
+                            @endif
+                            @if($puedeEditar)
                                 <x-ui.accion icono="fa-pen" :etiqueta="__('ui.acciones.editar')" wire:click="editarPotrero({{ $potrero->id }})" />
                                 @if($potrero->activo)
                                     <x-ui.accion icono="fa-trash" color="peligro" :etiqueta="__('ui.acciones.eliminar')" wire:click="confirmarBajaPotrero({{ $potrero->id }})" />
                                 @else
                                     <x-ui.accion icono="fa-rotate-left" :etiqueta="__('ui.acciones.reactivar')" wire:click="reactivarPotrero({{ $potrero->id }})" />
                                 @endif
-                            </div>
-                        @endif
+                            @endif
+                        </div>
                     </div>
                 </div>
             @empty

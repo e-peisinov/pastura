@@ -11,10 +11,11 @@ use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 /**
- * Alta y edición de un tipo de pastura (hijo de Configuracion, P16): nombre,
- * alturas de ingreso y de salida (las dos o ninguna, ingreso > salida) y la
- * fórmula de kg MS/ha (A y B, o ninguno). Los números se escriben con coma
- * decimal (convenciones.md, "Localización") y se aceptan también con punto.
+ * Alta y edición de un tipo de pastura (hijo de Configuracion, P16): nombre y
+ * alturas de ingreso y de salida (las dos o ninguna, ingreso > salida). Los
+ * kg MS/ha no son del tipo: salen de las curvas de cada potrero (P23). Los
+ * números se escriben con coma decimal (convenciones.md, "Localización") y se
+ * aceptan también con punto.
  */
 class TipoPasturaFormulario extends Component
 {
@@ -24,8 +25,6 @@ class TipoPasturaFormulario extends Component
 
     public const ALTURA_MAXIMA = 300;
 
-    public const BIOMASA_MAXIMA = 100000;
-
     public ?int $tipoId = null;
 
     public string $nombre = '';
@@ -33,10 +32,6 @@ class TipoPasturaFormulario extends Component
     public string $altura_ingreso_cm = '';
 
     public string $altura_salida_cm = '';
-
-    public string $biomasa_a = '';
-
-    public string $biomasa_b = '';
 
     public function mount(?int $tipoId = null): void
     {
@@ -49,8 +44,6 @@ class TipoPasturaFormulario extends Component
             $this->nombre = $tipo->nombre;
             $this->altura_ingreso_cm = self::aTexto($tipo->altura_ingreso_cm);
             $this->altura_salida_cm = self::aTexto($tipo->altura_salida_cm);
-            $this->biomasa_a = self::aTexto($tipo->biomasa_a);
-            $this->biomasa_b = self::aTexto($tipo->biomasa_b);
         }
 
         $this->marcarFormularioLimpio();
@@ -64,8 +57,6 @@ class TipoPasturaFormulario extends Component
             'nombre' => trim($this->nombre),
             'altura_ingreso_cm' => self::aNumero($this->altura_ingreso_cm),
             'altura_salida_cm' => self::aNumero($this->altura_salida_cm),
-            'biomasa_a' => self::aNumero($this->biomasa_a),
-            'biomasa_b' => self::aNumero($this->biomasa_b),
         ];
 
         $reglaIngreso = ['nullable', 'numeric', 'gt:0', 'max:'.self::ALTURA_MAXIMA, 'required_with:altura_salida_cm'];
@@ -77,20 +68,14 @@ class TipoPasturaFormulario extends Component
             'nombre' => ['required', 'string', 'max:100', $this->nombreUnico()],
             'altura_ingreso_cm' => $reglaIngreso,
             'altura_salida_cm' => ['nullable', 'numeric', 'gt:0', 'max:'.self::ALTURA_MAXIMA, 'required_with:altura_ingreso_cm'],
-            'biomasa_a' => ['nullable', 'numeric', 'between:-'.self::BIOMASA_MAXIMA.','.self::BIOMASA_MAXIMA, 'required_with:biomasa_b'],
-            'biomasa_b' => ['nullable', 'numeric', 'between:-'.self::BIOMASA_MAXIMA.','.self::BIOMASA_MAXIMA, 'required_with:biomasa_a'],
         ], [
             'altura_ingreso_cm.required_with' => __('configuracion.tipos.validacion.alturas_juntas'),
             'altura_salida_cm.required_with' => __('configuracion.tipos.validacion.alturas_juntas'),
             'altura_ingreso_cm.gt' => __('configuracion.tipos.validacion.ingreso_mayor'),
-            'biomasa_a.required_with' => __('configuracion.tipos.validacion.formula_junta'),
-            'biomasa_b.required_with' => __('configuracion.tipos.validacion.formula_junta'),
         ], [
             'nombre' => __('configuracion.tipos.campos.nombre'),
             'altura_ingreso_cm' => __('configuracion.tipos.campos.altura_ingreso_cm'),
             'altura_salida_cm' => __('configuracion.tipos.campos.altura_salida_cm'),
-            'biomasa_a' => __('configuracion.tipos.campos.biomasa_a'),
-            'biomasa_b' => __('configuracion.tipos.campos.biomasa_b'),
         ])->validate();
 
         if ($this->tipoId === null) {
@@ -142,7 +127,7 @@ class TipoPasturaFormulario extends Component
     /** @return list<string> */
     protected function camposFormulario(): array
     {
-        return ['nombre', 'altura_ingreso_cm', 'altura_salida_cm', 'biomasa_a', 'biomasa_b'];
+        return ['nombre', 'altura_ingreso_cm', 'altura_salida_cm'];
     }
 
     public function cerrarFormulario(): void

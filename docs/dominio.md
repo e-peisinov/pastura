@@ -17,11 +17,14 @@ las recorridas que sube la app y las muestra en tablas y en el mapa.
 ```
 tipos_pastura 1──* potreros
 campos 1──* potreros 1──* recorridas 1──* mediciones
+                │          *    *
+                │          │    └──1 estados_fenologicos   (el que eligió el recorredor, P23)
+users 1─────────┼──────────┘                                (quién hizo la recorrida)
+                └──* curvas_biomasa 1──* muestras_curva    (por potrero y estado, P23)
                           *
-                          │
-users 1───────────────────┘   (quién hizo la recorrida)
+                          └──1 estados_fenologicos
 users 1──* permisos           (matriz por módulo, D49)
-configuracion                 (fila única: nombre, logo, color, parámetros)
+configuracion                 (fila única: nombre, logo, color, parámetros, área del disco)
 auditoria                     (una fila por acción sensible, P18 y P20)
 ```
 
@@ -50,7 +53,8 @@ borra (con sus potreros); con historia se desactiva.
 
 - La **superficie** se calcula del contorno (área geodésica, en hectáreas), no
   se guarda (regla 8). Sin contorno, no hay superficie.
-- Un potrero **tiene historia** si tiene recorridas.
+- Un potrero **tiene historia** si tiene recorridas o curvas de biomasa
+  (un campo, si alguno de sus potreros la tiene).
 
 ### tipos_pastura
 
@@ -59,19 +63,57 @@ borra (con sus potreros); con historia se desactiva.
 | `nombre` | string(100) | Único. |
 | `altura_ingreso_cm` | decimal(5,1), null | Listo para pastorear desde acá. |
 | `altura_salida_cm` | decimal(5,1), null | El remanente. Las dos alturas van juntas o ninguna; ingreso > salida. |
-| `biomasa_a` | decimal(8,3), null | kg MS/ha por cm de altura. |
-| `biomasa_b` | decimal(8,1), null | kg MS/ha a altura cero (puede ser negativo). A y B van juntos o ninguno. |
 | `activo` | bool | Baja lógica: con potreros se desactiva, sin potreros se borra. |
 
-Los kg MS/ha de un punto son `max(0, A × altura + B)` con la fórmula vigente
-del tipo de pastura de su potrero (P16). Sin tipo o sin fórmula, no hay kg
-MS/ha.
+La fórmula de kg MS/ha que tenía el tipo (P16) se eliminó: los kilos salen de
+las curvas de biomasa de cada potrero (P23).
+
+### estados_fenologicos
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `nombre` | string(100) | Único (sin distinguir mayúsculas). |
+| `activo` | bool | Baja lógica: con curvas o recorridas se desactiva, sin nada se borra. |
+
+El estado de la pastura cuando se mide (P23). Se administra en
+Configuración; arranca con *Recién pastoreada*, *Rebrote* y *Pleno
+crecimiento* (`EstadosFenologicosSeeder`). La app los ofrece en el orden en
+que se cargaron.
+
+### curvas_biomasa
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `potrero_id` | FK potreros, restrict | |
+| `estado_fenologico_id` | FK estados_fenologicos, restrict | |
+| `fecha` | date | El día de los cortes. No puede ser futura. |
+| `observaciones` | text, null | |
+| `activo` | bool | **Vigente.** Una sola por potrero y estado: guardar o reactivar otra deja esta **reemplazada**. |
+
+### muestras_curva
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `curva_biomasa_id` | FK curvas_biomasa, cascade | |
+| `altura_cm` | decimal(5,1) | La altura que dio el pasturómetro en ese punto. |
+| `peso_seco_g` | decimal(7,2) | El pasto cortado bajo el disco, seco en estufa hasta peso constante. |
+
+- Cada muestra vale `peso_seco_g / area_disco_m2 × 10` kg MS/ha (1 g/m² =
+  10 kg/ha).
+- La **recta** de la curva (A, B y R²) sale de sus muestras por mínimos
+  cuadrados, al leer (regla 8; `RectaBiomasa`, y la misma cuenta en SQL en
+  `Recorrida::subconsultaKg`). Una curva se guarda con **al menos 3 muestras
+  y 2 alturas distintas**, así siempre tiene recta.
+- Los kg MS/ha de un punto son `max(0, A × altura + B)` con la curva
+  **vigente** de su potrero para el estado de su recorrida. Sin estado, o sin
+  curva vigente para ese potrero y ese estado, **no hay kg MS/ha** (P23).
 
 ### configuracion
 
-Fila única (marca blanca, D8): `nombre`, `logo_path`, `color_acento`, y los
+Fila única (marca blanca, D8): `nombre`, `logo_path`, `color_acento`, los
 parámetros del seguimiento (P17): `dias_sin_medir` (7 al instalar) y
-`puntos_minimos` (20 al instalar).
+`puntos_minimos` (20 al instalar), y el **área del disco** `area_disco_m2`
+(0,10 al instalar, P23): lo que corta cada muestra de una curva.
 
 ### auditoria
 
@@ -88,6 +130,7 @@ el texto se arma al leer.
 |---|---|---|
 | `uuid` | char(36), único | Lo genera la app; hace idempotente la subida (P4). |
 | `potrero_id` | FK potreros, restrict | |
+| `estado_fenologico_id` | FK estados_fenologicos, null, restrict | El que eligió el recorredor al empezar (P23); elige la curva de los kg. Null en las de antes. Se puede corregir desde la ficha. |
 | `user_id` | FK users, restrict | El recorredor que la hizo. |
 | `iniciada_en` | datetime | Hora del celular al empezar. |
 | `dispositivo` | string(150), null | Descripción del celular. |
@@ -107,7 +150,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | `tomada_en` | datetime | |
 | `altura_cm` | decimal(5,1) | Altura del disco (Y). |
 | `distancia_cm` | decimal(5,1), null | Cámara–disco (Z). |
-| `kg_ms_ha` | unsigned int, null | Lo que vio el recorredor en el celular. El panel no lo usa: calcula los kg MS/ha con la fórmula vigente del tipo de pastura (P16). |
+| `kg_ms_ha` | unsigned int, null | Lo que vio el recorredor en el celular. El panel no lo usa: calcula los kg MS/ha con la curva vigente (P23). |
 | `latitud`, `longitud` | decimal(10,7), null | WGS84. Null si no había GPS. |
 | `precision_m` | decimal(6,1), null | Precisión que informó el GPS. |
 | `inclinacion_grados` | decimal(4,1), null | |
@@ -134,6 +177,7 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 |---|---|---|
 | Inicio (tablero) | Editar | Ver |
 | Campos | Editar | Ver |
+| Curvas de biomasa | Editar | Ver |
 | Recorridas | Editar | Editar (solo las suyas) |
 | Usuarios | Editar | Sin acceso |
 | Reportes | Editar (con Ver alcanza, también para exportar) | Sin acceso |
@@ -152,6 +196,8 @@ Lo que se muestra de una recorrida se **calcula** de sus mediciones activas
 | API de sincronización + login en la app de campo (P9 a P11) | Hecha |
 | Inicio de la app: hacer una recorrida o ir al panel sin volver a ingresar (P12) | Hecha |
 | Configuración: organización, tipos de pastura, parámetros (P16, P17) | Hecha |
-| kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Hecha |
+| kg MS/ha calculados en el panel; la app baja la fórmula (P16) | Reemplazada por P23 |
+| Curvas de biomasa por potrero y estado fenológico; la app pide el estado y baja las rectas (P23) | Hecha |
+| Modo curva en la app (medir los puntos de corte y numerar las bolsas) | Pendiente |
 | Auditoría de lo sensible (P18, P20) | Hecha |
 | Reportes con CSV y PDF (P18, P21) | Hecha |

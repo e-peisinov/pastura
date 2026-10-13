@@ -73,10 +73,11 @@ class Campo extends Model
         return $query->where('activo', true);
     }
 
-    /** Con historia se desactiva; sin historia se borra con sus potreros (D20). */
+    /** Con historia (recorridas o curvas de biomasa) se desactiva; sin historia se borra con sus potreros (D20). */
     public function tieneHistoria(): bool
     {
-        return $this->recorridas()->exists();
+        return $this->recorridas()->exists()
+            || CurvaBiomasa::query()->whereIn('potrero_id', $this->potreros()->select('id'))->exists();
     }
 
     /** Suma de la superficie de los potreros activos con contorno, en hectáreas (regla 8). */

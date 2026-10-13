@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\EstadoPotrero;
 use App\Enums\Rol;
 use App\Models\Campo;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
@@ -19,9 +21,10 @@ use Tests\TestCase;
 
 /**
  * El set de demo (para el video y las presentaciones) solo agrega datos: dos
- * campos con sus potreros, tipos de pastura con alturas y fórmula, usuarios
- * y un historial de recorridas que deja el tablero con potreros en cada
- * estado. Correrlo dos veces no duplica nada.
+ * campos con sus potreros, tipos de pastura con alturas, estados de la
+ * pastura y curvas de biomasa (P23), usuarios y un historial de recorridas
+ * que deja el tablero con potreros en cada estado. Correrlo dos veces no
+ * duplica nada.
  */
 class DemoSeederTest extends TestCase
 {
@@ -37,7 +40,7 @@ class DemoSeederTest extends TestCase
         $this->assertSame(['El Mirador', 'Estancia La Aurora'], Campo::query()->where('nombre', '!=', 'Campo propio')->orderBy('nombre')->pluck('nombre')->all());
         $this->assertSame(11, Potrero::query()->whereKeyNot($propio->id)->count());
         $this->assertSame(0, Potrero::query()->whereKeyNot($propio->id)->whereNull('contorno')->count());
-        $this->assertSame(4, TipoPastura::query()->whereNotNull('biomasa_a')->whereNotNull('altura_ingreso_cm')->count());
+        $this->assertSame(4, TipoPastura::query()->whereNotNull('altura_ingreso_cm')->count());
         $this->assertSame(Rol::Admin, User::query()->where('email', DemoSeeder::ADMIN)->first()->rol);
         $this->assertNotNull($real->fresh());
         $this->assertSame(1, $propio->recorridas()->count());
@@ -68,6 +71,24 @@ class DemoSeederTest extends TestCase
         $this->assertSame('Avena 1', $fuera->first()->recorrida->potrero->nombre);
     }
 
+    /** P23: una curva por potrero y estado (menos El Monte), cada recorrida con su estado, y kilos donde hay curva. */
+    public function test_carga_curvas_y_cada_recorrida_tiene_su_estado(): void
+    {
+        $this->seed(DemoSeeder::class);
+
+        $this->assertSame(['Recién pastoreada', 'Rebrote', 'Pleno crecimiento'], EstadoFenologico::query()->orderBy('id')->pluck('nombre')->all());
+        $this->assertSame(30, CurvaBiomasa::query()->vigentes()->count());
+        $this->assertSame(450, CurvaBiomasa::query()->withCount('muestras')->get()->sum('muestras_count'));
+        $this->assertSame(0, Recorrida::query()->whereNull('estado_fenologico_id')->count());
+
+        $monte = Potrero::query()->where('nombre', 'El Monte')->sole();
+        $loma = Potrero::query()->where('nombre', 'La Loma')->sole();
+        $this->assertSame(0, $monte->curvas()->count());
+        $this->assertNull($monte->ultimaRecorrida()->kg_ms_ha_medio);
+        $this->assertGreaterThan(1000, $loma->ultimaRecorrida()->kg_ms_ha_medio);
+        $this->assertGreaterThan(0.9, $loma->curvas()->with('muestras')->first()->recta()->r2);
+    }
+
     public function test_es_repetible(): void
     {
         $this->seed(DemoSeeder::class);
@@ -78,6 +99,8 @@ class DemoSeederTest extends TestCase
 
         $this->assertSame($recorridas, Recorrida::query()->count());
         $this->assertSame($mediciones, Medicion::query()->count());
+        $this->assertSame(30, CurvaBiomasa::query()->count());
+        $this->assertSame(450, CurvaBiomasa::query()->withCount('muestras')->get()->sum('muestras_count'));
         $this->assertSame(11, Potrero::query()->count());
         $this->assertSame(1, User::query()->where('email', DemoSeeder::ADMIN)->count());
     }

@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Fila única con la identidad de la organización (marca blanca, D8) y los
- * parámetros del seguimiento (P17). Se edita en /configuracion.
+ * parámetros del seguimiento (P17) y de las curvas de biomasa (P23). Se
+ * edita en /configuracion.
  */
 class Configuracion extends Model
 {
@@ -21,6 +22,9 @@ class Configuracion extends Model
 
     public const PUNTOS_MINIMOS = 20;
 
+    /** Lo que corta una muestra de una curva de biomasa (P23): el área del disco. */
+    public const AREA_DISCO_M2 = 0.1;
+
     protected $table = 'configuracion';
 
     protected $fillable = [
@@ -29,6 +33,7 @@ class Configuracion extends Model
         'color_acento',
         'dias_sin_medir',
         'puntos_minimos',
+        'area_disco_m2',
     ];
 
     protected function casts(): array
@@ -37,6 +42,7 @@ class Configuracion extends Model
             'color_acento' => ColorAcento::class,
             'dias_sin_medir' => 'integer',
             'puntos_minimos' => 'integer',
+            'area_disco_m2' => 'float',
         ];
     }
 
@@ -49,7 +55,7 @@ class Configuracion extends Model
 
     protected function camposAuditados(): array
     {
-        return ['dias_sin_medir', 'puntos_minimos'];
+        return ['dias_sin_medir', 'puntos_minimos', 'area_disco_m2'];
     }
 
     /** @return array<string, mixed> */
@@ -69,6 +75,7 @@ class Configuracion extends Model
             'color_acento' => ColorAcento::Green,
             'dias_sin_medir' => self::DIAS_SIN_MEDIR,
             'puntos_minimos' => self::PUNTOS_MINIMOS,
+            'area_disco_m2' => self::AREA_DISCO_M2,
         ]);
     }
 }

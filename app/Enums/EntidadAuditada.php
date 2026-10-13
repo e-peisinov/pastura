@@ -16,6 +16,8 @@ enum EntidadAuditada: string
     case Usuario = 'usuario';
     case TipoPastura = 'tipo_pastura';
     case Configuracion = 'configuracion';
+    case EstadoFenologico = 'estado_fenologico';
+    case CurvaBiomasa = 'curva_biomasa';
 
     public function etiqueta(): string
     {
@@ -33,6 +35,8 @@ enum EntidadAuditada: string
             self::Usuario => 'fa-user-gear',
             self::TipoPastura => 'fa-wheat-awn',
             self::Configuracion => 'fa-sliders',
+            self::EstadoFenologico => 'fa-seedling',
+            self::CurvaBiomasa => 'fa-chart-line',
         };
     }
 
@@ -43,7 +47,8 @@ enum EntidadAuditada: string
             self::Recorrida, self::Medicion => 'recorridas',
             self::Potrero, self::Campo => 'campos',
             self::Usuario => 'usuarios',
-            self::TipoPastura, self::Configuracion => 'configuracion',
+            self::TipoPastura, self::Configuracion, self::EstadoFenologico => 'configuracion',
+            self::CurvaBiomasa => 'curvas',
         };
     }
 }

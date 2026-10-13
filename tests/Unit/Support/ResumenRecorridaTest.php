@@ -3,7 +3,7 @@
 namespace Tests\Unit\Support;
 
 use App\Models\Medicion;
-use App\Models\TipoPastura;
+use App\Support\Biomasa\RectaBiomasa;
 use App\Support\Recorridas\ResumenRecorrida;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -26,7 +26,7 @@ class ResumenRecorridaTest extends TestCase
 
     /**
      * Activos: 10, 12,5 y 14 cm → media 36,5 / 3 = 12,17; rango 10–14.
-     * kg con 150 × h + 300 (P16): 1800, 2175 y 2400 → 2125; lo que mandó el
+     * kg con la recta 150 × h + 300 (P23): 1800, 2175 y 2400 → 2125; lo que mandó el
      * celular no cuenta. El descartado (40 cm, 07:50) no cuenta en nada,
      * tampoco en el horario.
      */
@@ -37,7 +37,7 @@ class ResumenRecorridaTest extends TestCase
             $this->punto(12.5, null, '08:10'),
             $this->punto(10, 1800, '08:05'),
             $this->punto(14, 2400, '08:42'),
-        ]), new TipoPastura(['biomasa_a' => 150, 'biomasa_b' => 300]));
+        ]), self::recta());
 
         $this->assertSame(3, $resumen->puntos);
         $this->assertEqualsWithDelta(12.1667, $resumen->alturaMedia, 0.0001);
@@ -50,7 +50,7 @@ class ResumenRecorridaTest extends TestCase
 
     public function test_sin_puntos_activos_no_hay_promedios(): void
     {
-        $resumen = ResumenRecorrida::de(collect([$this->punto(20, 3000, '09:00', activo: false)]), new TipoPastura(['biomasa_a' => 150, 'biomasa_b' => 300]));
+        $resumen = ResumenRecorrida::de(collect([$this->punto(20, 3000, '09:00', activo: false)]), self::recta());
 
         $this->assertSame(0, $resumen->puntos);
         $this->assertNull($resumen->alturaMedia);
@@ -61,12 +61,18 @@ class ResumenRecorridaTest extends TestCase
         $this->assertNull($resumen->ultima);
     }
 
-    public function test_sin_tipo_o_sin_formula_el_kg_medio_queda_vacio(): void
+    /** Sin curva (sin recta) el kg medio queda vacío, aunque el celular haya mandado kg. */
+    public function test_sin_recta_el_kg_medio_queda_vacio(): void
     {
         $puntos = collect([$this->punto(8, 1500, '10:00'), $this->punto(9, 1600, '10:01')]);
 
         $this->assertSame(8.5, ResumenRecorrida::de($puntos, null)->alturaMedia);
         $this->assertNull(ResumenRecorrida::de($puntos, null)->kgMedio);
-        $this->assertNull(ResumenRecorrida::de($puntos, new TipoPastura(['nombre' => 'Sorgo']))->kgMedio);
+    }
+
+    /** kg = 150 × h + 300, ajustada sobre puntos exactos. */
+    private static function recta(): RectaBiomasa
+    {
+        return RectaBiomasa::ajustar([[10, 1800], [20, 3300], [30, 4800]]);
     }
 }

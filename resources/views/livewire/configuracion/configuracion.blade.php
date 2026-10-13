@@ -2,19 +2,12 @@
     use App\Support\Formato;
     use App\Support\Tema;
 
-    // Hasta 3 decimales, sin ceros de más: 25,5 / 30 / 0,125.
-    $decimal = fn (float $valor) => rtrim(rtrim(Formato::numero(abs($valor), 3), '0'), ',');
 
     // Lo que comparten tabla y cards se calcula una sola vez (§5).
     $filas = $tipos->map(fn ($t) => [
         'modelo' => $t,
         'ingreso' => $t->tieneAlturas() ? __('configuracion.tipos.altura', ['valor' => Formato::numero($t->altura_ingreso_cm, 1)]) : null,
         'salida' => $t->tieneAlturas() ? __('configuracion.tipos.altura', ['valor' => Formato::numero($t->altura_salida_cm, 1)]) : null,
-        'formula' => $t->tieneFormula() ? __('configuracion.tipos.formula', [
-            'a' => ($t->biomasa_a < 0 ? '−' : '').$decimal($t->biomasa_a),
-            'signo' => $t->biomasa_b < 0 ? '−' : '+',
-            'b' => $decimal($t->biomasa_b),
-        ]) : null,
         'uso' => trans_choice('configuracion.tipos.uso', $t->potreros_count, ['count' => $t->potreros_count]),
     ]);
 @endphp
@@ -60,7 +53,7 @@
                 </div>
             </section>
 
-            {{-- Tipos de pastura: alturas de referencia y fórmula de kg MS/ha (P16) --}}
+            {{-- Tipos de pastura: alturas de referencia (P16) --}}
             <section class="bg-white border border-gray-200 rounded-lg" data-bloque-tipos>
                 <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-b border-gray-200">
                     <div>
@@ -82,7 +75,6 @@
                             <th class="px-4 py-3">{{ __('configuracion.tipos.columnas.nombre') }}</th>
                             <th class="px-4 py-3">{{ __('configuracion.tipos.columnas.ingreso') }}</th>
                             <th class="px-4 py-3">{{ __('configuracion.tipos.columnas.salida') }}</th>
-                            <th class="px-4 py-3">{{ __('configuracion.tipos.columnas.formula') }}</th>
                             <th class="px-4 py-3">{{ __('configuracion.tipos.columnas.uso') }}</th>
                             <th class="px-4 py-3">{{ __('configuracion.tipos.columnas.estado') }}</th>
                             @if($puedeEditar)
@@ -100,9 +92,6 @@
                                 @else
                                     <td class="px-4 py-3 text-gray-400" colspan="2">{{ __('configuracion.tipos.sin_alturas') }}</td>
                                 @endif
-                                <td class="px-4 py-3 tabular-nums whitespace-nowrap {{ $fila['formula'] !== null ? 'text-gray-800' : 'text-gray-400' }}">
-                                    {{ $fila['formula'] ?? __('configuracion.tipos.sin_formula') }}
-                                </td>
                                 <td class="px-4 py-3 text-gray-500">{{ $fila['uso'] }}</td>
                                 <td class="px-4 py-3">
                                     <x-ui.badge :color="$fila['modelo']->activo ? 'verde' : 'gris'">
@@ -119,7 +108,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7">
+                                <td colspan="6">
                                     <x-ui.vacio icono="fa-wheat-awn">{{ __('configuracion.tipos.sin_registros') }}</x-ui.vacio>
                                 </td>
                             </tr>
@@ -144,9 +133,6 @@
                                     {{ __('configuracion.tipos.sin_alturas') }}
                                 @endif
                             </p>
-                            <p class="text-sm tabular-nums {{ $fila['formula'] !== null ? 'text-gray-800' : 'text-gray-400' }}">
-                                {{ $fila['formula'] ?? __('configuracion.tipos.sin_formula') }}
-                            </p>
                             <p class="text-sm text-gray-500">{{ $fila['uso'] }}</p>
                             @if($puedeEditar)
                                 <div class="flex justify-end gap-2 pt-1">
@@ -160,7 +146,9 @@
                 </x-ui.cards>
             </section>
 
-            {{-- Parámetros del seguimiento (P17) --}}
+            @include('livewire.configuracion.partials.estados')
+
+            {{-- Parámetros del seguimiento (P17) y área del disco (P23) --}}
             <section class="bg-white border border-gray-200 rounded-lg" data-bloque-parametros>
                 <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-b border-gray-200">
                     <div>
@@ -185,6 +173,11 @@
                         <dd class="font-medium text-gray-800 tabular-nums">{{ trans_choice('configuracion.parametros.puntos', $configuracion->puntos_minimos, ['count' => $configuracion->puntos_minimos]) }}</dd>
                         <dd class="text-xs text-gray-500">{{ __('configuracion.parametros.ayuda_puntos_minimos') }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-gray-500">{{ __('configuracion.parametros.campos.area_disco_m2') }}</dt>
+                        <dd class="font-medium text-gray-800 tabular-nums" data-area-disco>{{ __('configuracion.parametros.metros', ['valor' => rtrim(rtrim(Formato::numero($configuracion->area_disco_m2, 4), '0'), ',')]) }}</dd>
+                        <dd class="text-xs text-gray-500">{{ __('configuracion.parametros.ayuda_area_disco') }}</dd>
+                    </div>
                 </dl>
             </section>
         </div>
@@ -198,6 +191,10 @@
         <livewire:configuracion.parametros :key="'parametros'" />
     @endif
 
+    @if($estadoFormulario !== null)
+        <livewire:configuracion.estado-fenologico-formulario :estado-id="$estadoFormulario ?: null" :key="'estado-'.$estadoFormulario" />
+    @endif
+
     @if($tipoFormulario !== null)
         <livewire:configuracion.tipo-pastura-formulario :tipo-id="$tipoFormulario ?: null" :key="'tipo-'.$tipoFormulario" />
     @endif
@@ -208,6 +205,15 @@
                                  :boton="$bajaDesactiva ? __('ui.acciones.desactivar') : __('ui.acciones.eliminar')"
                                  confirmar="baja" cancelar="cancelarBaja">
             {{ __($bajaDesactiva ? 'configuracion.tipos.confirmar_desactivar' : 'configuracion.tipos.confirmar_eliminar', ['nombre' => $tipoEnBaja->nombre]) }}
+        </x-ui.modal-confirmacion>
+    @endif
+
+    {{-- Baja de un estado: eliminar sin curvas ni recorridas, desactivar si las tiene --}}
+    @if($estadoEnBaja)
+        <x-ui.modal-confirmacion :tipo="$bajaEstadoDesactiva ? 'advertencia' : 'peligro'"
+                                 :boton="$bajaEstadoDesactiva ? __('ui.acciones.desactivar') : __('ui.acciones.eliminar')"
+                                 confirmar="bajaEstado" cancelar="cancelarBajaEstado">
+            {{ __($bajaEstadoDesactiva ? 'configuracion.estados.confirmar_desactivar' : 'configuracion.estados.confirmar_eliminar', ['nombre' => $estadoEnBaja->nombre]) }}
         </x-ui.modal-confirmacion>
     @endif
 </div>

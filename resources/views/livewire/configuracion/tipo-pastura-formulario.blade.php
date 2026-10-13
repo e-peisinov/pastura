@@ -1,4 +1,4 @@
-{{-- Alta / edición de un tipo de pastura: alturas de referencia y fórmula de kg MS/ha (P16). Hijo de Configuración. --}}
+{{-- Alta / edición de un tipo de pastura: sus alturas de referencia (P16). Hijo de Configuración. --}}
 <div>
     <x-ui.modal :titulo="$tipoId === null ? __('configuracion.tipos.nuevo') : __('configuracion.tipos.modificar')"
                 :icono="$tipoId === null ? 'fa-plus' : 'fa-pen'"
@@ -18,19 +18,6 @@
                 </x-ui.campo>
             </div>
             <p class="text-xs text-gray-500">{{ __('configuracion.tipos.ayuda_alturas') }}</p>
-        </fieldset>
-
-        <fieldset class="space-y-2">
-            <legend class="text-sm font-medium text-gray-700">{{ __('configuracion.tipos.formula_titulo') }}</legend>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <x-ui.campo :etiqueta="__('configuracion.tipos.campos.biomasa_a')" nombre="biomasa_a">
-                    <x-ui.input nombre="biomasa_a" wire:model="biomasa_a" inputmode="decimal" autocomplete="off" />
-                </x-ui.campo>
-                <x-ui.campo :etiqueta="__('configuracion.tipos.campos.biomasa_b')" nombre="biomasa_b">
-                    <x-ui.input nombre="biomasa_b" wire:model="biomasa_b" inputmode="decimal" autocomplete="off" />
-                </x-ui.campo>
-            </div>
-            <p class="text-xs text-gray-500">{{ __('configuracion.tipos.ayuda_formula') }}</p>
         </fieldset>
 
         <x-slot:footer>

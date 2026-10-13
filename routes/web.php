@@ -6,6 +6,7 @@ use App\Livewire\Actions\Logout;
 use App\Livewire\Auditoria\Auditoria;
 use App\Livewire\Campos\Campos;
 use App\Livewire\Configuracion\Configuracion;
+use App\Livewire\Curvas\Curvas;
 use App\Livewire\Recorridas\Recorridas;
 use App\Livewire\Reportes\Reportes;
 use App\Livewire\Tablero\Tablero;
@@ -25,6 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', Tablero::class)->name('dashboard')->middleware('modulo:tablero');
     // Campos y, desde su ficha, sus potreros con el contorno en el mapa (P5).
     Route::get('campos', Campos::class)->name('campos')->middleware('modulo:campos');
+    // Curvas de biomasa (P23): las muestras de cada potrero por estado fenológico; de ahí salen los kg MS/ha.
+    Route::get('curvas', Curvas::class)->name('curvas')->middleware('modulo:curvas');
     // Recorridas: el recorredor ve solo las suyas (dominio.md, regla 3); la ficha es un hijo.
     Route::get('recorridas', Recorridas::class)->name('recorridas')->middleware('modulo:recorridas');
     // Reportes (P18): solo lectura; exportar e imprimir es leer, con Ver alcanza.

@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ConfiguracionSeeder::class,
+            EstadosFenologicosSeeder::class,
             UsuariosSeeder::class,
         ]);
     }

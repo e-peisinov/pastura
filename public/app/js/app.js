@@ -73,8 +73,9 @@
   const numero = v => (v === '' || v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v));
 
   // La fórmula la pone el panel por tipo de pastura y llega con el catálogo (P16).
-  const formulaDe = potreroId => Biomasa.formulaDe(estado.catalogo, potreroId);
-  const kgMsHa = (alturaCm, potreroId) => Biomasa.kgMsHa(alturaCm, formulaDe(potreroId));
+  // La curva de biomasa del potrero para el estado de la recorrida (P23).
+  const curvaDe = r => Biomasa.curvaDe(estado.catalogo, r.potreroId, r.estadoId ?? null);
+  const kgMsHa = (alturaCm, r) => Biomasa.kgMsHa(alturaCm, curvaDe(r));
 
   // Botón de dos toques para acciones destructivas (sin diálogos del navegador).
   function dosToques(boton, textoConfirmar, accion) {
@@ -363,7 +364,7 @@
       creado: Date.now(),
       alturaCm,
       distanciaCm: Calibracion.distancia(estado.cal, r.tam),
-      kgMsHa: kgMsHa(alturaCm, recorrida.potreroId),
+      kgMsHa: kgMsHa(alturaCm, recorrida),
       tamPx: r.tam,
       dispersionCm: 1.4826 * r.mad * Calibracion.cmPorPixel(estado.cal, r.tam),
       imagenes: r.validos,
@@ -599,7 +600,7 @@
     const vista = vistaVigente();
     const r = estado.recorridas.find(x => x.uuid === vista);
     $('#reg-titulo').textContent = r ? `${r.potreroNombre} · ${r.campoNombre}` : vista === 'anteriores' ? 'Anteriores a las recorridas' : 'Sin recorridas';
-    $('#reg-estado').textContent = r ? `${fechaHora(r.iniciada)}${r.terminada ? ` a ${hora(r.terminada)}` : ' · en curso'}` : '';
+    $('#reg-estado').textContent = r ? `${fechaHora(r.iniciada)}${r.terminada ? ` a ${hora(r.terminada)}` : ' · en curso'}${r.estadoNombre ? ` · ${r.estadoNombre}` : ''}` : '';
     pintarCambioPotrero(r);
     $('#btn-csv-recorrida').disabled = !vista;
 
@@ -608,7 +609,7 @@
     const media = lista.length ? lista.reduce((s, m) => s + m.alturaCm, 0) / lista.length : null;
     $('#kpi-altura').textContent = media === null ? '–' : `${nf1.format(media)} cm`;
     const conKg = lista.filter(m => m.kgMsHa !== null);
-    $('#kpi-kg-caja').hidden = !conKg.length && !(r && formulaDe(r.potreroId));
+    $('#kpi-kg-caja').hidden = !conKg.length && !(r && curvaDe(r));
     $('#kpi-kg').textContent = conKg.length ? nf0.format(conKg.reduce((s, m) => s + m.kgMsHa, 0) / conKg.length) : '–';
 
     const ul = $('#lista-mediciones');
@@ -756,7 +757,7 @@
     if (abierta) {
       const puntos = medicionesDe(abierta.uuid).length;
       $('#ra-potrero').textContent = `${abierta.potreroNombre} · ${abierta.campoNombre}`;
-      $('#ra-detalle').textContent = `${puntos} ${puntos === 1 ? 'punto' : 'puntos'} · desde las ${hora(abierta.iniciada)}`;
+      $('#ra-detalle').textContent = [abierta.estadoNombre, `${puntos} ${puntos === 1 ? 'punto' : 'puntos'}`, `desde las ${hora(abierta.iniciada)}`].filter(Boolean).join(' · ');
     }
   }
 
@@ -900,7 +901,41 @@
     selCampo.innerHTML = campos.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
     if (campos.some(c => c.id === elegido)) selCampo.value = String(elegido);
     pintarPotreros(ultimo);
+    await pintarEstados();
     $('#btn-empezar').disabled = !campos.length;
+  }
+
+  /*
+   * El estado de la pastura (P23): propone el último que se usó en ese
+   * potrero y avisa cuál no tiene curva (se mide igual, sin kilos). Un
+   * catálogo de antes, o un panel sin estados, no lo pide.
+   */
+  async function pintarEstados() {
+    const estados = Biomasa.estadosDe(estado.catalogo);
+    const potreroId = Number($('#sel-potrero').value);
+    const sel = $('#sel-estado');
+    $('#campo-estado').hidden = !estados.length;
+    const elegido = estados.some(e => e.id === Number(sel.value)) && sel.dataset.potrero === String(potreroId)
+      ? Number(sel.value)
+      : Biomasa.estadoPropuesto(estados, await DB.leer('ultimosEstados', {}), potreroId);
+    sel.innerHTML = estados.map(e => {
+      const sinCurva = !Biomasa.curvaDe(estado.catalogo, potreroId, e.id);
+      return `<option value="${e.id}">${esc(e.nombre)}${sinCurva ? ' (sin curva)' : ''}</option>`;
+    }).join('');
+    sel.dataset.potrero = String(potreroId);
+    if (elegido !== null) sel.value = String(elegido);
+    pintarAyudaEstado();
+  }
+
+  function pintarAyudaEstado() {
+    const estadoId = Number($('#sel-estado').value) || null;
+    $('#ayuda-estado').hidden = $('#campo-estado').hidden || estadoId === null
+      || !!Biomasa.curvaDe(estado.catalogo, Number($('#sel-potrero').value), estadoId);
+  }
+
+  function estadoElegido() {
+    if ($('#campo-estado').hidden) return null;
+    return Biomasa.estadosDe(estado.catalogo).find(e => e.id === Number($('#sel-estado').value)) || null;
   }
 
   function campoElegido(selCampo = '#sel-campo') {
@@ -929,6 +964,8 @@
     const campo = campoElegido();
     const potrero = campo && campo.potreros.find(p => p.id === Number($('#sel-potrero').value));
     if (!potrero || !estado.sesion || recorridaAbierta()) { toast('Elegí el campo y el potrero', 'mal'); return; }
+    const pastura = estadoElegido();
+    if (!pastura && Biomasa.estadosDe(estado.catalogo).length) { toast('Elegí cómo está la pastura', 'mal'); return; }
     const u = estado.sesion.usuario;
     const r = {
       uuid: uuid(),
@@ -938,6 +975,8 @@
       campoNombre: campo.nombre,
       potreroId: potrero.id,
       potreroNombre: potrero.nombre,
+      estadoId: pastura ? pastura.id : null,
+      estadoNombre: pastura ? pastura.nombre : null,
       iniciada: Date.now(),
       terminada: null,
       dispositivo: Sincro.describirDispositivo(navigator.userAgent),
@@ -946,6 +985,7 @@
     };
     await DB.guardarRecorrida(r);
     await DB.guardar('ultimoPotrero', potrero.id);
+    if (pastura) await DB.guardar('ultimosEstados', { ...(await DB.leer('ultimosEstados', {})), [potrero.id]: pastura.id });
     estado.recorridas.push(r);
     estado.vista = r.uuid;
     $('#ultima').hidden = true;
@@ -1183,7 +1223,9 @@
       await salir();
     });
 
-    $('#sel-campo').addEventListener('change', () => pintarPotreros(null));
+    $('#sel-campo').addEventListener('change', () => { pintarPotreros(null); pintarEstados(); });
+    $('#sel-potrero').addEventListener('change', () => pintarEstados());
+    $('#sel-estado').addEventListener('change', pintarAyudaEstado);
     $('#btn-empezar').addEventListener('click', empezarRecorrida);
     $('#btn-actualizar-campos').addEventListener('click', () => cargarCatalogo({ avisar: true }));
     dosToques($('#btn-terminar'), '¿Terminar?', terminarRecorrida);

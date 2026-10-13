@@ -36,8 +36,8 @@ class UsuariosTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder(['Marcos Paz', 'marcos@geograss.test', 'Recorredor'])
             ->assertSee('Marta Ledesma')->assertSee('Usted')
-            ->assertSee('Edita 7 módulos')
-            ->assertSee('Edita 1 módulo · ve 2 · sin acceso a 4')
+            ->assertSee('Edita 8 módulos')
+            ->assertSee('Edita 1 módulo · ve 3 · sin acceso a 4')
             ->assertDontSee('Viejo Admin');
 
         Livewire::actingAs($this->admin)->test(Usuarios::class)

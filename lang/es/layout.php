@@ -8,6 +8,7 @@ return [
     'modulos' => [
         'tablero' => 'Inicio',
         'campos' => 'Campos',
+        'curvas' => 'Curvas de biomasa',
         'recorridas' => 'Recorridas',
         'usuarios' => 'Usuarios',
         'reportes' => 'Reportes',

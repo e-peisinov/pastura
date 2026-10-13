@@ -151,7 +151,8 @@ que es lo que permite comparar un potrero consigo mismo en el tiempo. Lo que
 guarda `mediciones.kg_ms_ha` queda como lo que vio el recorredor en el
 celular. La app baja la fórmula con los campos y deja de pedirla en sus
 ajustes. La migración convierte los textos que ya había en tipos (sin
-alturas ni fórmula) sin perder ninguno.
+alturas ni fórmula) sin perder ninguno. *La fórmula por tipo de pastura
+quedó reemplazada por P23; las alturas de referencia siguen.*
 
 **P17 — 2026-10-10 — Configuración con pantalla (reemplaza P7).** Tres
 bloques, cada uno con su modal: los datos de la organización (nombre, logo y
@@ -235,7 +236,8 @@ adaptado al pastoreo, con dompdf y la plantilla de impresión del kit:
 - **Potreros del campo**: la altura de la última recorrida del período,
   los más altos primero.
 - **Disponibilidad forrajera** por campo: kg MS/ha de la última recorrida
-  del período × hectáreas, de los potreros con contorno y con fórmula; se
+  del período × hectáreas, de los potreros con contorno y con fórmula
+  (*desde P23, con curva de biomasa para el estado de esa recorrida*); se
   dice cuántos de los potreros del campo cubre.
 - **Actividad por recorredor**: recorridas y puntos.
 - CSV y PDF salen de las mismas tablas (`ExportadorReportes::secciones`).
@@ -252,3 +254,44 @@ disco, glosario) y los identificadores técnicos: la base del celular sigue
 siendo `pasturometro` (cambiarla dejaría sin sus recorridas a los
 celulares que ya la usan), y el repo y la base de datos siguen como
 `pastura`.
+
+**P23 — 2026-10-13 — Los kg MS/ha salen de curvas de biomasa por potrero y
+por estado fenológico (reemplaza la fórmula de P16).** Lo explicó Mateo
+(usuario y agrónomo) por audio: no hay una relación fija entre centímetros
+y kilos; se **calibra en cada potrero** (él dice "lote"). En unos 15 puntos
+se mide la altura con el pasturómetro y, justo debajo del disco, se corta
+el pasto, se **seca en estufa hasta peso constante** y se pesa. La recta
+de esos puntos es la **curva de biomasa** del potrero. Y no sirve para
+siempre: la estructura de la planta cambia cómo se comprime bajo el disco
+(una alfalfa recién pastoreada no se parece a una en plena primavera), así
+que se hace **una curva por estado fenológico**.
+- **Catálogo de estados fenológicos** en Configuración (como los tipos de
+  pastura). Arranca con tres por seeder, que Mateo puede cambiar.
+- **Curva** = potrero + estado + fecha de los cortes + sus **muestras**
+  (altura del disco en cm y peso seco en g). Hay **una vigente** por
+  potrero y estado: guardar o reactivar otra la deja reemplazada.
+- Cada muestra vale `peso seco / área del disco × 10` kg MS/ha (1 g/m² =
+  10 kg/ha). El **área del disco** es un parámetro de Configuración
+  (0,10 m² al instalar, lo que dijo Mateo: gramos × 100).
+- **A, B y R² se calculan de las muestras, no se guardan** (regla 8): la
+  recta de mínimos cuadrados sale de cinco sumas, así entra en la misma
+  subconsulta de los listados. Una curva se guarda con **al menos 3
+  muestras y 2 alturas distintas**, así siempre tiene recta. No se escriben
+  A y B a mano: si hay una planilla, se cargan sus puntos.
+- El **recorredor elige el estado al empezar la recorrida** (la app propone
+  el último que usó en ese potrero) y la recorrida lo guarda. Los kg de un
+  punto son `max(0, A × altura + B)` con la curva **vigente** del potrero
+  para ese estado, al leer: corregir una curva recalcula la historia, como
+  en P16.
+- **Sin curva para ese potrero y estado, no hay kg MS/ha.** No hay fórmula
+  de respaldo: un número de catálogo se leería como medido. Por eso la
+  fórmula A y B del tipo de pastura se elimina (columnas, pantalla, API).
+  Una recorrida sin estado (las de antes, o de una app vieja) tampoco tiene
+  kilos hasta que tenga uno.
+- Las curvas tienen **su módulo** (`curvas`, Alt+B): el administrador nace
+  con Editar y el recorredor con Ver. Se llega también desde cada potrero
+  de la ficha del campo. Las muestras se cargan **en el panel** por ahora;
+  un "modo curva" en la app (medir los puntos y numerar las bolsas) queda
+  para después.
+- La palabra **calibración** sigue siendo la de la cámara (glosario); lo de
+  los cortes es la **curva de biomasa**.

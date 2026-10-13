@@ -18,6 +18,7 @@ class SubirRecorridaRequest extends FormRequest
     {
         return [
             'potrero_id' => ['required', 'integer'],
+            'estado_fenologico_id' => ['nullable', 'integer'],
             'iniciada_en' => ['required', 'date'],
             'dispositivo' => ['nullable', 'string', 'max:150'],
             'observaciones' => ['nullable', 'string', 'max:2000'],

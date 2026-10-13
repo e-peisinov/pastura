@@ -16,6 +16,8 @@ se calcula, qué se valida) no van acá: están en [dominio.md](dominio.md).
 | **Distancia** | 1) Cámara–disco (Z), la que mide la app. 2) Distancia recorrida en el potrero. | En el código y en pantalla, "distancia" es Z. |
 | **Pasturómetro** | 1) El instrumento: el caño con el disco. 2) El nombre viejo del sistema, hasta P22. | El sistema se llama **GeoGrass**; "pasturómetro" es solo el instrumento. Quedan con el nombre viejo identificadores técnicos que no se cambian: la base del celular (`pasturometro` en IndexedDB), el repo y la base `pastura`. |
 | **Campo** | 1) El establecimiento agropecuario. 2) Un campo de un formulario. | En el dominio, "campo" es el establecimiento; en la UI se dice "dato" para lo otro cuando hace falta. |
+| **Calibración** | 1) La de la cámara: pasar del tamaño de los marcadores a centímetros. 2) La de los cortes: pasar de centímetros a kg MS/ha (lo que dice el agrónomo, "calibrar el lote"). | "Calibración" es siempre la de la cámara. Lo de los cortes es la **curva de biomasa** (P23). |
+| **Estado** | 1) El estado fenológico de la pastura (recién pastoreada, rebrote...). 2) El estado de un potrero en el tablero (listo, en crecimiento, bajo el remanente). 3) Activo o inactivo. | En el dominio se dice **estado de la pastura** (o fenológico) para el primero y **estado del potrero** para el segundo; nunca "estado" solo. |
 
 ## 1. El terreno
 
@@ -29,9 +31,16 @@ pastura. *Evitar:* lote, parcela.
 KML/KMZ de Google Earth.
 
 **Tipo de pastura** — La pastura que tiene un potrero (alfalfa, festuca,
-verdeo de avena...), con sus alturas de referencia y su fórmula de kg MS/ha
-(P16). Se administra en Configuración. *En el código:* `tipos_pastura`,
-`TipoPastura`. *Evitar:* especie, cultivo.
+verdeo de avena...), con sus alturas de referencia (P16). No tiene kilos:
+esos son de las curvas de biomasa (P23). Se administra en Configuración.
+*En el código:* `tipos_pastura`, `TipoPastura`. *Evitar:* especie, cultivo.
+
+**Estado de la pastura** (o **estado fenológico**) — Cómo está la pastura
+cuando se mide: recién pastoreada, rebrote, pleno crecimiento... La misma
+altura no pesa lo mismo en cada uno, porque cambia cómo se comprime bajo el
+disco. El recorredor lo elige al empezar la recorrida. Se administra en
+Configuración. *En el código:* `estados_fenologicos`, `EstadoFenologico`.
+*Evitar:* "estado" solo, etapa.
 
 ## 2. La medición
 
@@ -49,10 +58,30 @@ hora. Pertenece a una recorrida. *En el código:* `mediciones`.
 
 **Calibración** — El ajuste que hace la app con alturas conocidas para pasar
 del tamaño de los marcadores a centímetros. Cada medición guarda una copia.
+*No es* la curva de biomasa.
+
+**Curva de biomasa** — La relación entre la altura del disco y los kg MS/ha
+de un potrero en un estado de la pastura (P23). Sale de unas 15 muestras: en
+cada punto se mide con el pasturómetro y se corta el pasto debajo del disco.
+Su **recta** (`kg MS/ha = A × altura + B`, con su R²) se calcula de las
+muestras. Hay una **vigente** por potrero y estado; las anteriores quedan
+**reemplazadas**. Mateo le dice "calibrar el lote". *En el código:*
+`curvas_biomasa`, `CurvaBiomasa`, `RectaBiomasa`. *Evitar:* calibración,
+fórmula.
+
+**Muestra** — Un punto de una curva de biomasa: la altura del disco y el
+peso seco (en gramos, secado en estufa hasta peso constante) del pasto
+cortado justo debajo. *En el código:* `muestras_curva`, `MuestraCurva`.
+*No es* una medición: la medición es de una recorrida y no se corta nada.
+
+**Área del disco** — Lo que corta una muestra, en m² (0,10 al instalar).
+Pasa los gramos a kg MS/ha: con 0,10 m², gramos × 100. Es un parámetro de
+Configuración.
 
 **kg MS/ha** — Kilos de materia seca por hectárea: la biomasa estimada a partir
-de la altura con la fórmula `A × altura + B` del tipo de pastura del potrero.
-La calcula el panel con la fórmula vigente (P16).
+de la altura con la recta de la curva de biomasa vigente del potrero para el
+estado de la recorrida. La calcula el panel al leer (P23). Sin curva, no hay
+kilos.
 
 ## 3. El seguimiento
 

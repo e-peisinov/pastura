@@ -6,6 +6,8 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\TipoPastura;
 use App\Models\User;
 use App\Support\Reportes\Reportes;
@@ -46,8 +48,8 @@ class ReportesTest extends TestCase
         $this->juan = User::factory()->create(['name' => 'Juan Pérez']);
         $this->ana = User::factory()->create(['name' => 'Ana Gómez']);
 
-        $alfalfa = TipoPastura::factory()->create(['nombre' => 'Alfalfa', 'biomasa_a' => 100, 'biomasa_b' => 0]);
-        $sinFormula = TipoPastura::factory()->sinFormula()->create(['nombre' => 'Sorgo']);
+        $alfalfa = TipoPastura::factory()->create(['nombre' => 'Alfalfa']);
+        $sinCurva = TipoPastura::factory()->create(['nombre' => 'Sorgo']);
 
         $this->esperanza = Campo::factory()->create(['nombre' => 'La Esperanza']);
         $this->sanJose = Campo::factory()->create(['nombre' => 'San José']);
@@ -55,7 +57,12 @@ class ReportesTest extends TestCase
         $this->lote4 = Potrero::factory()->conContorno()->for($this->esperanza)->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => $alfalfa->id]);
         $this->bajo = Potrero::factory()->for($this->esperanza)->create(['nombre' => 'El Bajo', 'tipo_pastura_id' => $alfalfa->id]);
         Potrero::factory()->for($this->esperanza)->inactivo()->create(['nombre' => 'Viejo']);
-        $this->norte = Potrero::factory()->conContorno(-64.30)->for($this->sanJose)->create(['nombre' => 'Norte', 'tipo_pastura_id' => $sinFormula->id]);
+        $this->norte = Potrero::factory()->conContorno(-64.30)->for($this->sanJose)->create(['nombre' => 'Norte', 'tipo_pastura_id' => $sinCurva->id]);
+        // kg = 100 × h (P23) en los dos de La Esperanza; Norte no tiene curva.
+        $estado = EstadoFenologico::factory()->create();
+        foreach ([$this->lote4, $this->bajo] as $potrero) {
+            CurvaBiomasa::factory()->recta(100, 0)->create(['potrero_id' => $potrero->id, 'estado_fenologico_id' => $estado->id]);
+        }
 
         $this->recorrida($this->lote4, $this->juan, '2026-09-05 08:00', [10, 12]);   // 11 cm
         $this->recorrida($this->lote4, $this->juan, '2026-09-15 08:00', [16, 18]);   // 17 cm

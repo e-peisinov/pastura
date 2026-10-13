@@ -16,8 +16,6 @@ class TipoPasturaFactory extends Factory
             'nombre' => fake()->randomElement(['Alfalfa', 'Festuca', 'Raigrás', 'Verdeo de avena', 'Pastura base alfalfa']).' '.fake()->unique()->numberBetween(1, 9999),
             'altura_ingreso_cm' => 20,
             'altura_salida_cm' => 7,
-            'biomasa_a' => 25,
-            'biomasa_b' => 0,
             'activo' => true,
         ];
     }
@@ -25,11 +23,6 @@ class TipoPasturaFactory extends Factory
     public function sinAlturas(): static
     {
         return $this->state(fn () => ['altura_ingreso_cm' => null, 'altura_salida_cm' => null]);
-    }
-
-    public function sinFormula(): static
-    {
-        return $this->state(fn () => ['biomasa_a' => null, 'biomasa_b' => null]);
     }
 
     public function inactivo(): static

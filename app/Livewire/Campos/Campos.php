@@ -282,6 +282,7 @@ class Campos extends Component
             'campos' => $campos,
             'buscando' => $buscando,
             'puedeEditar' => Gate::allows('puedeEditar', 'campos'),
+            'verCurvas' => Gate::allows('puedeVer', 'curvas'),
             'hayFiltro' => $buscando || $this->filtroEstado !== 'activos',
             'estados' => [
                 'todos' => __('ui.filtros.todos'),

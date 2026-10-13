@@ -92,14 +92,21 @@ class Potrero extends Model
         return $this->hasMany(Recorrida::class);
     }
 
+    /** Sus curvas de biomasa, una vigente por estado fenológico (P23). */
+    public function curvas(): HasMany
+    {
+        return $this->hasMany(CurvaBiomasa::class);
+    }
+
     public function scopeActivos(Builder $query): Builder
     {
         return $query->where('activo', true);
     }
 
+    /** Con recorridas o con curvas se desactiva; sin nada se borra. */
     public function tieneHistoria(): bool
     {
-        return $this->recorridas()->exists();
+        return $this->recorridas()->exists() || $this->curvas()->exists();
     }
 
     public function superficieHa(): ?float

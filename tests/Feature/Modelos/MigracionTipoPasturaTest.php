@@ -33,7 +33,6 @@ class MigracionTipoPasturaTest extends TestCase
         $this->assertSame(['Alfalfa', 'Festuca alta'], TipoPastura::query()->orderBy('nombre')->pluck('nombre')->all());
         $alfalfa = TipoPastura::query()->where('nombre', 'Alfalfa')->sole();
         $this->assertFalse($alfalfa->tieneAlturas());
-        $this->assertFalse($alfalfa->tieneFormula());
 
         $tipoDe = fn (string $nombre) => Potrero::query()->where('nombre', $nombre)->sole()->tipoPastura?->nombre;
         $this->assertSame('Alfalfa', $tipoDe('Lote 1'));

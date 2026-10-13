@@ -73,10 +73,10 @@ return [
 
     'disponibilidad' => [
         'titulo' => 'Disponibilidad forrajera',
-        'ayuda' => 'kg MS/ha de la última recorrida del período × hectáreas, sumado por campo. Solo los potreros con contorno y con fórmula de kg MS/ha.',
+        'ayuda' => 'kg MS/ha de la última recorrida del período × hectáreas, sumado por campo. Solo los potreros con contorno y con curva de biomasa para el estado de esa recorrida.',
         'valor' => ':valor kg MS',
         'detalle' => ':con_dato de :potreros potreros con dato',
-        'sin_datos' => 'Ningún potrero medido en el período tiene contorno y fórmula de kg MS/ha.',
+        'sin_datos' => 'Ningún potrero medido en el período tiene contorno y curva de biomasa.',
     ],
 
     'recorredores' => [

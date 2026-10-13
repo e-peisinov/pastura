@@ -2,8 +2,10 @@
 
 namespace App\Support\Recorridas;
 
+use App\Models\CurvaBiomasa;
 use App\Models\Medicion;
 use App\Models\Recorrida;
+use App\Support\Biomasa\RectaBiomasa;
 use App\Support\Formato;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -33,15 +35,19 @@ final class ExportadorRecorridas
         fputcsv($salida, self::columnas(), self::SEPARADOR, '"', '\\', "\r\n");
 
         $recorridas = $consulta->clone()
-            ->with(['potrero.campo', 'potrero.tipoPastura', 'user', 'mediciones' => fn ($q) => $q->orderBy('tomada_en')->orderBy('id')])
+            ->with(['potrero.campo', 'estadoFenologico', 'user', 'mediciones' => fn ($q) => $q->orderBy('tomada_en')->orderBy('id')])
             ->reorder()
             ->orderBy('recorridas.iniciada_en')
             ->orderBy('recorridas.id')
             ->lazy(100);
 
+        $rectas = CurvaBiomasa::rectasVigentes();
+
         foreach ($recorridas as $recorrida) {
+            $recta = $rectas[$recorrida->potrero_id.'-'.$recorrida->estado_fenologico_id] ?? null;
+
             foreach ($recorrida->mediciones as $medicion) {
-                fputcsv($salida, self::fila($recorrida, $medicion), self::SEPARADOR, '"', '\\', "\r\n");
+                fputcsv($salida, self::fila($recorrida, $medicion, $recta), self::SEPARADOR, '"', '\\', "\r\n");
             }
         }
 
@@ -72,7 +78,7 @@ final class ExportadorRecorridas
     }
 
     /** @return list<string> */
-    private static function fila(Recorrida $recorrida, Medicion $medicion): array
+    private static function fila(Recorrida $recorrida, Medicion $medicion, ?RectaBiomasa $recta): array
     {
         $estado = match (true) {
             ! $recorrida->activo => __('recorridas.csv.anulada'),
@@ -86,10 +92,11 @@ final class ExportadorRecorridas
             $recorrida->potrero->campo->nombre,
             $recorrida->potrero->nombre,
             $recorrida->user->name,
+            $recorrida->estadoFenologico?->nombre ?? '',
             self::numero($medicion->altura_cm, 1),
             self::numero($medicion->distancia_cm, 1),
-            // Con la fórmula vigente del tipo de pastura (P16), como en la pantalla.
-            self::numero($medicion->kgMsHaSegun($recorrida->potrero->tipoPastura), 0),
+            // Con la curva vigente del potrero para el estado (P23), como en la pantalla.
+            self::numero($medicion->kgMsHaSegun($recta), 0),
             self::numero($medicion->latitud, 7),
             self::numero($medicion->longitud, 7),
             self::numero($medicion->precision_m, 1),

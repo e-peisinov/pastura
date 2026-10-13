@@ -53,11 +53,18 @@ function medicion(id, extra = {}) {
 
 // ----- armado del JSON -----------------------------------------------------
 
+test('manda el estado fenológico que eligió el recorredor (P23)', () => {
+  assert.equal(Sincro.armarCuerpo(recorrida({ estadoId: 5 }), []).estado_fenologico_id, 5);
+  // Una recorrida guardada antes de P23 no lo tiene.
+  assert.equal(Sincro.armarCuerpo(recorrida(), []).estado_fenologico_id, null);
+});
+
 test('arma el JSON de la API con los nombres de las columnas y los decimales de cada una', () => {
   const cuerpo = plano(Sincro.armarCuerpo(recorrida(), [medicion('a1')]));
 
   assert.deepEqual(cuerpo, {
     potrero_id: 3,
+    estado_fenologico_id: null,
     iniciada_en: '2026-10-10T12:12:00.000Z',
     dispositivo: 'iPhone · Safari',
     observaciones: null,

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EntidadAuditada;
 use App\Models\Traits\Auditable;
+use App\Support\Biomasa\RectaBiomasa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -59,12 +60,13 @@ class Medicion extends Model
     }
 
     /**
-     * Los kg MS/ha de este punto con la fórmula vigente del tipo de pastura
-     * (P16). `kg_ms_ha` es otra cosa: lo que vio el recorredor en el celular.
+     * Los kg MS/ha de este punto con la recta de la curva vigente (P23; la
+     * da Recorrida::recta()). `kg_ms_ha` es otra cosa: lo que vio el
+     * recorredor en el celular.
      */
-    public function kgMsHaSegun(?TipoPastura $tipo): ?float
+    public function kgMsHaSegun(?RectaBiomasa $recta): ?float
     {
-        return $tipo?->kgMsHa((float) $this->altura_cm);
+        return $recta?->kgMsHa((float) $this->altura_cm);
     }
 
     // ----- Auditoría (P18): descartar y restaurar ----------------------------

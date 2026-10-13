@@ -3,10 +3,12 @@
 namespace App\Livewire\Recorridas;
 
 use App\Livewire\Traits\EnviaToasts;
+use App\Models\EstadoFenologico;
 use App\Models\Medicion;
 use App\Models\Recorrida;
 use App\Support\Recorridas\ExportadorRecorridas;
 use App\Support\Recorridas\ResumenRecorrida;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -18,6 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * Cada acción pide Editar en Recorridas y vuelve a buscar la recorrida con
  * visiblesPara(): un recorredor no toca las de otro aunque mande el id.
+ * Cambiar el estado fenológico (si el recorredor eligió mal) cambia la curva
+ * con la que se calculan los kg (P23).
  */
 class RecorridaDetalle extends Component
 {
@@ -29,11 +33,54 @@ class RecorridaDetalle extends Component
 
     public int $z = 50;
 
+    /** El estado fenológico de la recorrida (P23), editable desde la ficha. */
+    public ?int $estadoId = null;
+
     public function mount(int $recorridaId, int $z = 50): void
     {
         $this->recorridaId = $recorridaId;
         $this->z = $z;
-        $this->recorrida(); // 404 si no es visible para este usuario
+        $this->estadoId = $this->recorrida()->estado_fenologico_id; // 404 si no es visible para este usuario
+    }
+
+    // ----- Estado fenológico (P23) -------------------------------------------
+
+    public function updatedEstadoId(mixed $valor): void
+    {
+        Gate::authorize('puedeEditar', 'recorridas');
+
+        $recorrida = $this->recorrida();
+        $vacio = $valor === null || $valor === '';
+        $estado = $vacio ? null : $this->estadosElegibles($recorrida)->find((int) $valor);
+
+        if (! $vacio && $estado === null) {
+            $this->estadoId = $recorrida->estado_fenologico_id;
+
+            return;
+        }
+
+        $recorrida->update(['estado_fenologico_id' => $estado?->id]);
+        $this->estadoId = $estado?->id;
+        $this->toastExito($recorrida->curvaBiomasa() !== null
+            ? __('recorridas.toasts.estado_con_curva')
+            : __('recorridas.toasts.estado_sin_curva'));
+        $this->dispatch('recorrida-actualizada');
+    }
+
+    /**
+     * Los estados activos más el que la recorrida ya tenía, aunque esté
+     * desactivado (se conserva).
+     *
+     * @return Collection<int, EstadoFenologico>
+     */
+    private function estadosElegibles(Recorrida $recorrida): Collection
+    {
+        $actual = $recorrida->estado_fenologico_id;
+
+        return EstadoFenologico::query()
+            ->where(fn ($q) => $q->where('activo', true)->when($actual !== null, fn ($q) => $q->orWhere('id', $actual)))
+            ->orderBy('id')
+            ->get(['id', 'nombre']);
     }
 
     public function cerrar(): void
@@ -120,16 +167,20 @@ class RecorridaDetalle extends Component
     {
         $recorrida = $this->recorrida()->load([
             'potrero.campo',
-            'potrero.tipoPastura',
+            'estadoFenologico',
             'user',
             'mediciones' => fn ($q) => $q->orderBy('tomada_en')->orderBy('id'),
         ]);
 
-        $resumen = ResumenRecorrida::de($recorrida->mediciones, $recorrida->potrero->tipoPastura);
+        $recta = $recorrida->recta();
+        $resumen = ResumenRecorrida::de($recorrida->mediciones, $recta);
 
         return view('livewire.recorridas.recorrida-detalle', [
             'recorrida' => $recorrida,
+            'recta' => $recta,
             'resumen' => $resumen,
+            'estados' => $this->estadosElegibles($recorrida),
+            'verCurvas' => Gate::allows('puedeVer', 'curvas'),
             'puedeEditar' => Gate::allows('puedeEditar', 'recorridas'),
             'mapa' => $this->datosMapa($recorrida, $resumen),
         ]);

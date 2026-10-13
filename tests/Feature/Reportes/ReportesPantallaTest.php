@@ -8,6 +8,8 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\CurvaBiomasa;
+use App\Models\EstadoFenologico;
 use App\Models\TipoPastura;
 use App\Models\User;
 use App\Support\Impresiones\ReportesPdf;
@@ -41,12 +43,17 @@ class ReportesPantallaTest extends TestCase
         Carbon::setTestNow('2026-10-10 15:00:00');
         $this->admin = User::factory()->admin()->create();
         $juan = User::factory()->create(['name' => 'Juan Pérez']);
-        $alfalfa = TipoPastura::factory()->create(['biomasa_a' => 100, 'biomasa_b' => 0]);
+        $alfalfa = TipoPastura::factory()->create();
 
         $this->esperanza = Campo::factory()->create(['nombre' => 'La Esperanza']);
         Campo::factory()->create(['nombre' => 'San José']);
         $this->lote4 = Potrero::factory()->conContorno()->for($this->esperanza)->create(['nombre' => 'Lote 4', 'tipo_pastura_id' => $alfalfa->id]);
         $this->bajo = Potrero::factory()->for($this->esperanza)->create(['nombre' => 'El Bajo', 'tipo_pastura_id' => $alfalfa->id]);
+        // kg = 100 × h (P23): una curva vigente en cada potrero, antes que sus recorridas.
+        $estado = EstadoFenologico::factory()->create();
+        foreach ([$this->lote4, $this->bajo] as $potrero) {
+            CurvaBiomasa::factory()->recta(100, 0)->create(['potrero_id' => $potrero->id, 'estado_fenologico_id' => $estado->id]);
+        }
 
         foreach (['2026-09-05 08:00' => 11, '2026-09-15 08:00' => 17] as $fecha => $altura) {
             $recorrida = Recorrida::factory()->for($this->lote4)->for($juan)->create(['iniciada_en' => $fecha]);

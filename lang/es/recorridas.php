@@ -43,6 +43,7 @@ return [
             'altura_media' => 'Altura media',
             'rango' => 'Mínima – máxima',
             'kg' => 'kg MS/ha medio',
+            'estado' => 'Estado de la pastura',
             'horario' => 'Horario',
             'recorredor' => 'Recorredor',
         ],
@@ -53,6 +54,10 @@ return [
         'puntos' => 'Puntos',
         'sin_puntos' => 'La recorrida no tiene puntos.',
         'sin_dato' => '—',
+        'sin_estado' => 'Sin kilos: la recorrida no tiene el estado de la pastura.',
+        'sin_estado_corto' => 'Sin estado',
+        'sin_curva' => 'Sin kilos: el potrero no tiene curva de biomasa para ese estado.',
+        'ver_curvas' => 'Ver curvas',
         'columnas' => [
             'hora' => 'Hora',
             'altura' => 'Altura',
@@ -79,6 +84,8 @@ return [
         'restaurado' => 'El punto vuelve a contar en el promedio.',
         'anulada' => 'Recorrida anulada.',
         'restaurada' => 'Recorrida restaurada.',
+        'estado_con_curva' => 'Estado cambiado: los kg MS/ha se calculan con la curva de ese estado.',
+        'estado_sin_curva' => 'Estado cambiado. El potrero no tiene curva para ese estado: la recorrida queda sin kg MS/ha.',
     ],
 
     'csv' => [
@@ -88,6 +95,7 @@ return [
             'campo' => 'Campo',
             'potrero' => 'Potrero',
             'recorredor' => 'Recorredor',
+            'estado_pastura' => 'Estado de la pastura',
             'altura_cm' => 'Altura (cm)',
             'distancia_cm' => 'Distancia cámara-disco (cm)',
             'kg_ms_ha' => 'kg MS/ha',

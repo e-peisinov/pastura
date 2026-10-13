@@ -10,6 +10,7 @@ use App\Models\Campo;
 use App\Models\Medicion;
 use App\Models\Potrero;
 use App\Models\Recorrida;
+use App\Models\CurvaBiomasa;
 use App\Models\TipoPastura;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -48,11 +49,12 @@ class RecorridasTest extends TestCase
         $this->ana = User::factory()->create(['name' => 'Ana Gómez', 'rol' => Rol::Recorredor]);
 
         $esperanza = Campo::factory()->create(['nombre' => 'La Esperanza']);
-        // Los kg del listado salen de la fórmula del tipo de pastura (P16): 100 × h + 900.
+        // Los kg del listado salen de la curva vigente del potrero (P23): 100 × h + 900.
         $this->lote4 = Potrero::factory()->for($esperanza)->create([
             'nombre' => 'Lote 4',
-            'tipo_pastura_id' => TipoPastura::factory()->create(['biomasa_a' => 100, 'biomasa_b' => 900])->id,
+            'tipo_pastura_id' => TipoPastura::factory()->create()->id,
         ]);
+        CurvaBiomasa::factory()->recta(100, 900)->create(['potrero_id' => $this->lote4->id]);
         $this->bajo = Potrero::factory()->for($esperanza)->create(['nombre' => 'El Bajo']);
         $this->sanJose = Potrero::factory()->for(Campo::factory()->create(['nombre' => 'San José']))->create(['nombre' => 'Potrero Norte']);
     }
