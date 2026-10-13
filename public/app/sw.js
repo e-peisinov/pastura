@@ -2,7 +2,7 @@
  * Service worker: guarda la app completa en el celular para que abra y
  * funcione sin conexión. Al cambiar cualquier archivo, subir VERSION.
  */
-const VERSION = 'app-8';
+const VERSION = 'app-9';
 const ARCHIVOS = [
   './',
   'index.html',

@@ -40,10 +40,10 @@ class DatosOrganizacionTest extends TestCase
 
     public function test_carga_los_datos_actuales_y_los_guarda(): void
     {
-        Configuracion::factory()->create(['nombre' => 'Pasturómetro', 'color_acento' => ColorAcento::Green]);
+        Configuracion::factory()->create(['nombre' => 'GeoGrass', 'color_acento' => ColorAcento::Green]);
 
         Livewire::actingAs($this->admin)->test(DatosOrganizacion::class)
-            ->assertSet('nombre', 'Pasturómetro')
+            ->assertSet('nombre', 'GeoGrass')
             ->assertSet('color_acento', 'green')
             ->assertSeeHtml('data-paleta="teal"')
             ->set('nombre', '  Estancia La Paz ')

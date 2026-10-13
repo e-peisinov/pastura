@@ -239,3 +239,16 @@ adaptado al pastoreo, con dompdf y la plantilla de impresión del kit:
   dice cuántos de los potreros del campo cubre.
 - **Actividad por recorredor**: recorridas y puntos.
 - CSV y PDF salen de las mismas tablas (`ExportadorReportes::secciones`).
+
+**P22 — 2026-10-13 — El sistema se llama GeoGrass.** Cambio de marca:
+"Pasturómetro" pasa a ser **GeoGrass**, con el dominio **geograss.com.ar**
+(el del servidor de P9). Cambian el nombre de la app (título, manifest,
+pantalla de ingreso), `APP_NAME`, el remitente de los correos
+(`no-responder@geograss.com.ar`) y el nombre por omisión de la
+organización; una migración renombra la organización que todavía se
+llamaba "Pasturómetro" y deja un nombre elegido en Configuración. **No
+cambian**: "pasturómetro" como nombre del instrumento (el caño con el
+disco, glosario) y los identificadores técnicos: la base del celular sigue
+siendo `pasturometro` (cambiarla dejaría sin sus recorridas a los
+celulares que ya la usan), y el repo y la base de datos siguen como
+`pastura`.

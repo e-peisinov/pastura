@@ -1,6 +1,6 @@
-# Pasturómetro
+# GeoGrass
 
-Medición de la altura del disco de un pasturómetro con la cámara del celular,
+[geograss.com.ar](https://geograss.com.ar). Medición de la altura del disco de un pasturómetro con la cámara del celular,
 usando los marcadores ArUco (4×4, números 0 a 3) impresos en el disco.
 Funciona sin conexión y georreferencia cada medición.
 

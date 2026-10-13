@@ -63,9 +63,9 @@ class OrdenaPorColumnaTest extends TestCase
 
     private function tresUsuarios(): void
     {
-        User::factory()->create(['name' => 'Beltran', 'rol' => Rol::Admin, 'email' => 'c@pasturometro.test']);
-        User::factory()->create(['name' => 'Alvarez', 'rol' => Rol::Recorredor, 'email' => 'a@pasturometro.test']);
-        User::factory()->create(['name' => 'Correa', 'rol' => Rol::Admin, 'email' => 'b@pasturometro.test']);
+        User::factory()->create(['name' => 'Beltran', 'rol' => Rol::Admin, 'email' => 'c@geograss.test']);
+        User::factory()->create(['name' => 'Alvarez', 'rol' => Rol::Recorredor, 'email' => 'a@geograss.test']);
+        User::factory()->create(['name' => 'Correa', 'rol' => Rol::Admin, 'email' => 'b@geograss.test']);
     }
 
     public function test_abre_con_el_orden_inicial_y_la_cabecera_lo_marca(): void

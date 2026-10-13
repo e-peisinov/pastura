@@ -1,5 +1,5 @@
 /*
- * Pasturómetro: app de campo.
+ * GeoGrass: app de campo.
  * Cámara → worker de visión → calibración → medición con GPS, todo offline.
  * Cada medición pertenece a una recorrida (campo y potrero del panel); la
  * cola sube las recorridas cuando hay señal (P9 a P11).
@@ -691,7 +691,7 @@
 
   function pintarInicio() {
     const u = estado.sesion && estado.sesion.usuario;
-    $('#inicio-saludo').textContent = u ? `Hola, ${u.nombre.split(' ')[0]}` : 'Pasturómetro';
+    $('#inicio-saludo').textContent = u ? `Hola, ${u.nombre.split(' ')[0]}` : 'GeoGrass';
 
     const abierta = recorridaAbierta();
     const recorrida = $('#btn-ir-recorrida');

@@ -1,7 +1,8 @@
-# CLAUDE.md — Pasturómetro
+# CLAUDE.md — GeoGrass
 
-Sistema para medir la altura de las pasturas con un pasturómetro de disco y la
-cámara del celular. Dos partes:
+**GeoGrass** (geograss.com.ar; antes "Pasturómetro", P22). Sistema para
+medir la altura de las pasturas con un pasturómetro de disco (el
+instrumento, que conserva su nombre) y la cámara del celular. Dos partes:
 
 - **App de campo** (`public/app/`, se abre en `/app`): PWA offline, sin
   build, servida por el mismo Apache que el panel (P9). Mide con los

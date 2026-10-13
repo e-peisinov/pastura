@@ -1,6 +1,6 @@
 {
-  "name": "Pasturómetro",
-  "short_name": "Pasturómetro",
+  "name": "GeoGrass",
+  "short_name": "GeoGrass",
   "description": "Altura del disco del pasturómetro con la cámara, sin conexión.",
   "lang": "es",
   "start_url": "./",

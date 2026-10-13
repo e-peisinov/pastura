@@ -6,7 +6,7 @@ Modelo de datos, reglas de negocio y alcance de la v1. El vocabulario está en
 
 ## Qué resuelve
 
-Un productor (por ahora, una sola organización, P1) mide la altura de sus
+**GeoGrass** (geograss.com.ar, P22) es el sistema. Un productor (por ahora, una sola organización, P1) mide la altura de sus
 pasturas con un pasturómetro de disco y el celular. La **app de campo**
 (`public/app/`, PWA offline, P9) calcula la altura del disco con la cámara y guarda cada
 punto con GPS. El **panel** (este Laravel) organiza los campos y potreros, recibe

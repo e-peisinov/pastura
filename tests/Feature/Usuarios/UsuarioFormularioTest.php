@@ -47,7 +47,7 @@ class UsuarioFormularioTest extends TestCase
             ->set('rol', 'recorredor')
             ->assertSet('permisos.usuarios', 'sin_acceso')
             ->set('nombre', ' Marcos Paz ')
-            ->set('email', 'Marcos@Pasturometro.test')
+            ->set('email', 'Marcos@GeoGrass.test')
             ->set('contrasena', 'clave-segura-1')
             ->set('contrasena_confirmation', 'clave-segura-1')
             ->set('permisos.usuarios', 'ver')
@@ -59,7 +59,7 @@ class UsuarioFormularioTest extends TestCase
             ->assertDispatched('usuario-guardado')
             ->assertDispatched('cerrar-usuario-formulario');
 
-        $usuario = User::query()->where('email', 'marcos@pasturometro.test')->firstOrFail();
+        $usuario = User::query()->where('email', 'marcos@geograss.test')->firstOrFail();
         $this->assertSame('Marcos Paz', $usuario->name);
         $this->assertSame(Rol::Recorredor, $usuario->rol);
         $this->assertTrue($usuario->activo);
@@ -81,11 +81,11 @@ class UsuarioFormularioTest extends TestCase
 
     public function test_valida_nombre_email_unico_rol_contrasena_y_niveles(): void
     {
-        User::factory()->create(['email' => 'repetido@pasturometro.test']);
+        User::factory()->create(['email' => 'repetido@geograss.test']);
 
         Livewire::actingAs($this->admin)->test(UsuarioFormulario::class)
             ->set('nombre', '')
-            ->set('email', 'repetido@pasturometro.test')
+            ->set('email', 'repetido@geograss.test')
             ->set('contrasena', 'corta')
             ->set('contrasena_confirmation', 'otra')
             ->set('permisos.campos', 'cualquiera')
@@ -95,16 +95,16 @@ class UsuarioFormularioTest extends TestCase
             ->call('guardar')
             ->assertHasErrors(['email' => 'email']);
 
-        $this->assertSame(1, User::query()->where('email', 'repetido@pasturometro.test')->count());
+        $this->assertSame(1, User::query()->where('email', 'repetido@geograss.test')->count());
     }
 
     public function test_la_edicion_carga_los_niveles_efectivos_y_no_pide_contrasena(): void
     {
-        $usuario = User::factory()->conNivel('usuarios', Nivel::Ver)->create(['name' => 'Marcos', 'email' => 'marcos@pasturometro.test']);
+        $usuario = User::factory()->conNivel('usuarios', Nivel::Ver)->create(['name' => 'Marcos', 'email' => 'marcos@geograss.test']);
 
         Livewire::actingAs($this->admin)->test(UsuarioFormulario::class, ['usuarioId' => $usuario->id])
             ->assertSet('nombre', 'Marcos')
-            ->assertSet('email', 'marcos@pasturometro.test')
+            ->assertSet('email', 'marcos@geograss.test')
             ->assertSet('rol', 'recorredor')
             ->assertSet('permisos.usuarios', 'ver')
             ->assertSet('permisos.recorridas', 'editar')

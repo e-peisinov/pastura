@@ -66,14 +66,14 @@ class BuscaEntidadTest extends TestCase
 
     public function test_con_2_caracteres_devuelve_los_resultados_con_su_etiqueta(): void
     {
-        User::factory()->create(['name' => 'Ana Pérez', 'email' => 'ana@pasturometro.test']);
-        User::factory()->create(['name' => 'Juan Anaya', 'email' => 'juan@pasturometro.test']);
-        User::factory()->create(['name' => 'Pedro Gómez', 'email' => 'pedro@pasturometro.test']);
+        User::factory()->create(['name' => 'Ana Pérez', 'email' => 'ana@geograss.test']);
+        User::factory()->create(['name' => 'Juan Anaya', 'email' => 'juan@geograss.test']);
+        User::factory()->create(['name' => 'Pedro Gómez', 'email' => 'pedro@geograss.test']);
 
         Livewire::test($this->componente())
             ->set('busqueda', 'an')
-            ->assertSee('Ana Pérez (ana@pasturometro.test)')
-            ->assertSee('Juan Anaya (juan@pasturometro.test)')
+            ->assertSee('Ana Pérez (ana@geograss.test)')
+            ->assertSee('Juan Anaya (juan@geograss.test)')
             ->assertDontSee('Pedro Gómez');
     }
 

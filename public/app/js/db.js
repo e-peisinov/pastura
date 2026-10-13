@@ -11,6 +11,7 @@
  * libre): quedan en el celular como "anteriores" y no se suben.
  */
 const DB = (() => {
+  // Nombre de la base del celular: queda el de antes de GeoGrass (P22) para no perder lo guardado.
   const NOMBRE = 'pasturometro';
   const VERSION = 2;
   let conexion = null;

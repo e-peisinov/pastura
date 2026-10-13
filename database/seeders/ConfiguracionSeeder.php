@@ -11,7 +11,7 @@ class ConfiguracionSeeder extends Seeder
     public function run(): void
     {
         Configuracion::query()->firstOrCreate([], [
-            'nombre' => 'Pasturómetro',
+            'nombre' => 'GeoGrass',
             'logo_path' => null,
             'color_acento' => ColorAcento::Green,
         ]);

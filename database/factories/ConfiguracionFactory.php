@@ -14,7 +14,7 @@ class ConfiguracionFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => 'Pasturómetro',
+            'nombre' => 'GeoGrass',
             'logo_path' => null,
             'color_acento' => ColorAcento::Green,
             'dias_sin_medir' => Configuracion::DIAS_SIN_MEDIR,

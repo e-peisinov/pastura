@@ -65,7 +65,7 @@ class Configuracion extends Model
     public static function instancia(): self
     {
         return static::query()->first() ?? new static([
-            'nombre' => 'Pasturómetro',
+            'nombre' => 'GeoGrass',
             'color_acento' => ColorAcento::Green,
             'dias_sin_medir' => self::DIAS_SIN_MEDIR,
             'puntos_minimos' => self::PUNTOS_MINIMOS,

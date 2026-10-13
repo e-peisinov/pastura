@@ -141,12 +141,12 @@ class PermisosTest extends TestCase
 
     public function test_un_usuario_dado_de_baja_pierde_la_sesion_y_no_puede_ingresar(): void
     {
-        $usuario = User::factory()->admin()->inactivo()->create(['email' => 'baja@pasturometro.test']);
+        $usuario = User::factory()->admin()->inactivo()->create(['email' => 'baja@geograss.test']);
 
         $this->actingAs($usuario)->get(route('dashboard'))->assertRedirect(route('login'));
         $this->assertGuest();
 
-        $this->post(route('login'), ['email' => 'baja@pasturometro.test', 'password' => 'password']);
+        $this->post(route('login'), ['email' => 'baja@geograss.test', 'password' => 'password']);
         $this->assertGuest();
     }
 

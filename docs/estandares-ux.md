@@ -1,6 +1,6 @@
 # Estándares de UX / UI
 
-> **Pasturómetro:** este archivo se copió del proyecto de origen del kit (Demo Taller, `C:\xampp\htdocs\demotaller`). Valen las reglas, no los nombres de los módulos del taller (órdenes, clientes, caja...). Las referencias `Dn` son decisiones del origen, resumidas en `C:\Users\Usuario\Desktop\especificaciones\03-decisiones.md`; las decisiones propias de este proyecto son `Pn` y están en [decisiones.md](decisiones.md).
+> **GeoGrass:** este archivo se copió del proyecto de origen del kit (Demo Taller, `C:\xampp\htdocs\demotaller`). Valen las reglas, no los nombres de los módulos del taller (órdenes, clientes, caja...). Las referencias `Dn` son decisiones del origen, resumidas en `C:\Users\Usuario\Desktop\especificaciones\03-decisiones.md`; las decisiones propias de este proyecto son `Pn` y están en [decisiones.md](decisiones.md).
 
 Demo Taller — sistema de gestión para talleres mecánicos y gomerías
 

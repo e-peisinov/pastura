@@ -29,12 +29,12 @@ class UsuariosTest extends TestCase
 
     public function test_la_ruta_lista_los_usuarios_con_rol_resumen_y_estado(): void
     {
-        User::factory()->create(['name' => 'Marcos Paz', 'email' => 'marcos@pasturometro.test']);
+        User::factory()->create(['name' => 'Marcos Paz', 'email' => 'marcos@geograss.test']);
         User::factory()->admin()->inactivo()->create(['name' => 'Viejo Admin']);
 
         $this->actingAs($this->admin)->get(route('admin.usuarios'))
             ->assertOk()
-            ->assertSeeInOrder(['Marcos Paz', 'marcos@pasturometro.test', 'Recorredor'])
+            ->assertSeeInOrder(['Marcos Paz', 'marcos@geograss.test', 'Recorredor'])
             ->assertSee('Marta Ledesma')->assertSee('Usted')
             ->assertSee('Edita 7 módulos')
             ->assertSee('Edita 1 módulo · ve 2 · sin acceso a 4')

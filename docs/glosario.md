@@ -14,6 +14,7 @@ se calcula, qué se valida) no van acá: están en [dominio.md](dominio.md).
 |---|---|---|
 | **Altura** | 1) Altura del disco sobre el suelo (Y), que es la altura comprimida de la pastura. 2) Largo del caño (X). | "Altura" sola es siempre la del disco. Para el caño, decir "largo del caño". |
 | **Distancia** | 1) Cámara–disco (Z), la que mide la app. 2) Distancia recorrida en el potrero. | En el código y en pantalla, "distancia" es Z. |
+| **Pasturómetro** | 1) El instrumento: el caño con el disco. 2) El nombre viejo del sistema, hasta P22. | El sistema se llama **GeoGrass**; "pasturómetro" es solo el instrumento. Quedan con el nombre viejo identificadores técnicos que no se cambian: la base del celular (`pasturometro` en IndexedDB), el repo y la base `pastura`. |
 | **Campo** | 1) El establecimiento agropecuario. 2) Un campo de un formulario. | En el dominio, "campo" es el establecimiento; en la UI se dice "dato" para lo otro cuando hace falta. |
 
 ## 1. El terreno
